@@ -1,0 +1,7 @@
+add_executable(AYStats_UnitTests main.cpp Test_Stats.cpp Test_Calculation.cpp Test_Effects.cpp)
+target_link_libraries(AYStats_UnitTests PRIVATE AYStatsCore AYTest)
+if(TARGET AYStatsBatch)
+    target_sources(AYStats_UnitTests PRIVATE Test_Batch.cpp)
+    target_link_libraries(AYStats_UnitTests PRIVATE AYStatsBatch)
+endif()
+ay_add_test_tiers(AYStats_UnitTests PREFIX stats TIMEOUT 60)
