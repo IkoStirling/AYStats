@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "kind": "AYTestRunBundle",
+  "completed": true,
+  "stats": {
+    "selected_cases": 3,
+    "reported_cases": 3,
+    "passed_cases": 3,
+    "skipped_cases": 0,
+    "problem_cases": 0,
+    "unreported_cases": 0,
+    "assertions": 26,
+    "failed_assertions": 0
+  },
+  "cases": [
+    {
+      "module": "AYStats",
+      "partition": "AYStats_GpuTests",
+      "source_module": "AYStats",
+      "suite": "StatsGpuTests",
+      "name": "hardware_integer_equivalence_and_non_aligned_tail",
+      "status": "passed",
+      "declaration_file": "D:\\Aliyat\\AliyatEngine\\AYRuntime\\AYStats\\unittest\\Test_Gpu.cpp",
+      "declaration_line": 13,
+      "assertions": 12,
+      "passed_assertions": 12,
+      "failed_assertions": 0,
+      "elapsed_ms": 675.9589000046253,
+      "skip_reason": "",
+      "failures": []
+    },
+    {
+      "module": "AYStats",
+      "partition": "AYStats_GpuTests",
+      "source_module": "AYStats",
+      "suite": "StatsGpuTests",
+      "name": "qualification_fallback_cancellation_and_device_lifetime",
+      "status": "passed",
+      "declaration_file": "D:\\Aliyat\\AliyatEngine\\AYRuntime\\AYStats\\unittest\\Test_Gpu.cpp",
+      "declaration_line": 21,
+      "assertions": 11,
+      "passed_assertions": 11,
+      "failed_assertions": 0,
+      "elapsed_ms": 600.3711999952793,
+      "skip_reason": "",
+      "failures": []
+    },
+    {
+      "module": "AYStats",
+      "partition": "AYStats_GpuTests",
+      "source_module": "AYStats",
+      "suite": "StatsGpuTests",
+      "name": "strict32_boundaries_and_interval_rejections",
+      "status": "passed",
+      "declaration_file": "D:\\Aliyat\\AliyatEngine\\AYRuntime\\AYStats\\unittest\\Test_Gpu.cpp",
+      "declaration_line": 30,
+      "assertions": 3,
+      "passed_assertions": 3,
+      "failed_assertions": 0,
+      "elapsed_ms": 750.4979000091553,
+      "skip_reason": "",
+      "failures": []
+    }
+  ],
+  "problems": [],
+  "errors": [],
+  "ctest_exit_code": 0,
+  "build_directory": "D:\\Aliyat\\AliyatEngine\\out\\build\\stats-core"
+}

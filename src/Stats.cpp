@@ -60,6 +60,10 @@ std::optional<std::size_t> Schema::index(StatId id) const noexcept {
 Result<std::shared_ptr<const Schema>> Schema::compile(std::vector<Definition> defs) {
     if(defs.size()>65536) return fail(Error::Limit,"definition limit exceeded");
     for(auto& d:defs) {
+        if(d.shape!=Shape::Scalar && d.shape!=Shape::Pool)return fail(Error::Invalid,"unknown shape",d.name);
+        if(d.mode!=Mode::Basic && d.mode!=Mode::Advanced)return fail(Error::Invalid,"unknown mode",d.name);
+        if(d.lifetime!=Lifetime::Persistent && d.lifetime!=Lifetime::Intermediate)return fail(Error::Invalid,"unknown lifetime",d.name);
+        if(d.capacityPolicy<CapacityPolicy::KeepCurrent || d.capacityPolicy>CapacityPolicy::KeepMissing)return fail(Error::Invalid,"unknown capacity policy",d.name);
         if(d.name.empty() || d.name.size()>256) return fail(Error::Invalid,"invalid definition name",d.name);
         const auto computed=statId(d.name);
         if(d.id && d.id!=computed) return fail(Error::Invalid,"id must match stable name",d.name);
@@ -72,7 +76,8 @@ Result<std::shared_ptr<const Schema>> Schema::compile(std::vector<Definition> de
         if(d.mode==Mode::Basic && (!d.zones.empty() || d.baseFrom || d.capacityFrom))
             return fail(Error::Invalid,"basic mode cannot use derived references or modifiers",d.name);
         std::unordered_set<std::uint32_t> zones;
-        for(const auto& z:d.zones) if(!zones.insert(z.id).second) return fail(Error::Duplicate,"duplicate zone",d.name);
+        if(d.zones.size()>256)return fail(Error::Limit,"zone count limit",d.name);
+        for(const auto& z:d.zones) {if(z.op<ZoneOp::Flat || z.op>ZoneOp::Override)return fail(Error::Invalid,"unknown zone operation",d.name);if(!zones.insert(z.id).second) return fail(Error::Duplicate,"duplicate zone",d.name);}
     }
     std::sort(defs.begin(),defs.end(),[](const auto& a,const auto& b){return a.id<b.id;});
     for(std::size_t i=1;i<defs.size();++i) if(defs[i-1].id==defs[i].id) return fail(Error::Duplicate,"duplicate name or identity collision",defs[i].name);
@@ -83,6 +88,7 @@ Result<std::shared_ptr<const Schema>> Schema::compile(std::vector<Definition> de
     std::function<Result<void>(std::size_t)> visit=[&](std::size_t i)->Result<void>{
         if(seen[i]==2) return {};
         if(seen[i]==1) { std::string chain; for(const auto& p:path) chain+=p+" -> "; return fail(Error::Cycle,"dependency cycle",chain+schema->_definitions[i].name); }
+        if(path.size()>=256)return fail(Error::Limit,"dependency depth limit",schema->_definitions[i].name);
         seen[i]=1; path.push_back(schema->_definitions[i].name);
         const auto& d=schema->_definitions[i];
         for(auto ref:{d.baseFrom,d.capacityFrom}) if(ref) {
@@ -168,6 +174,7 @@ Result<void> StatSet::validateModifier(const Modifier& m,std::optional<std::uint
     return {};
 }
 Result<void> StatSet::insert(Modifier m) {
+    if(_modifiers.size()>=65536)return fail(Error::Limit,"modifier count limit");
     if(auto r=validateModifier(m);!r)return r;
     auto next=*this;next._modifiers.push_back(m);if(auto r=next.rebuild();!r)return r;
     if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
@@ -194,15 +201,17 @@ Result<Settlement> StatSet::commit(std::span<const Mutation> ops,std::uint64_t e
     if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
     auto next=*this;Settlement result{_version,_version,{}};
     for(const auto& op:ops) {
+        if(op.op<MutationOp::SetBase || op.op>MutationOp::Restore)return fail(Error::Invalid,"unknown mutation operation");
         const auto i=_schema->index(op.target);if(!i)return fail(Error::Missing,"mutation target missing");
         const auto& d=_schema->definitions()[*i];auto& row=next._rows[*i];
         if(d.lifetime!=Lifetime::Persistent)return fail(Error::Invalid,"cannot commit intermediate value",d.name);
         if(op.op==MutationOp::SetBase) {
             if(d.baseFrom || op.amount<d.minimum || op.amount>d.maximum)return fail(Error::Invalid,"invalid base write",d.name);
-            row.base=op.amount;if(auto r=next.rebuild();!r)return std::unexpected(r.error());continue;
+            const auto beforeBase=row.base;row.base=op.amount;if(auto r=next.rebuild();!r)return std::unexpected(r.error());
+            result.changes.push_back({op.target,beforeBase,row.base,row.base-beforeBase,0,ChangeField::Base});continue;
         }
         if(d.shape!=Shape::Pool)return fail(Error::Invalid,"resource operation requires pool",d.name);
-        const auto before=row.current;Value excess=0;
+        const auto before=row.current,capacityBefore=row.capacity;Value excess=0;
         switch(op.op) {
         case MutationOp::SetCurrent:
             if(op.amount<0 || op.amount>row.capacity)return fail(Error::Invalid,"current outside capacity",d.name);
@@ -224,11 +233,13 @@ Result<Settlement> StatSet::commit(std::span<const Mutation> ops,std::uint64_t e
         default:break;
         }
         result.changes.push_back({op.target,before,row.current,row.current-before,excess});
+        if(op.op==MutationOp::SetCapacity)result.changes.push_back({op.target,capacityBefore,row.capacity,row.capacity-capacityBefore,0,ChangeField::Capacity});
     }
     if(ops.empty())return result;
     next._version++;result.afterVersion=next._version;*this=std::move(next);return result;
 }
 Result<StatSet> StatSet::restore(std::shared_ptr<const Schema> schema,std::span<const Row> rows,std::span<const Modifier> mods,std::uint64_t version) {
+    if(mods.size()>65536)return fail(Error::Limit,"saved modifier count limit");
     auto set=create(std::move(schema));if(!set)return set;
     if(rows.size()!=set->_rows.size() || !version || version==UINT64_MAX)return fail(Error::Invalid,"invalid restore rows/version");
     for(std::size_t i=0;i<rows.size();++i) {
@@ -238,6 +249,8 @@ Result<StatSet> StatSet::restore(std::shared_ptr<const Schema> schema,std::span<
         set->_rows[i]=r;
     }
     for(const auto& m:mods) {if(auto r=set->validateModifier(m);!r)return std::unexpected(r.error());set->_modifiers.push_back(m);}
-    if(auto r=set->rebuild();!r)return std::unexpected(r.error());set->_version=version;return set;
+    if(auto r=set->rebuild();!r)return std::unexpected(r.error());
+    for(std::size_t i=0;i<rows.size();++i)if(set->_schema->definitions()[i].capacityFrom && rows[i].capacity!=set->_rows[i].capacity)return fail(Error::Invalid,"saved derived capacity mismatch");
+    set->_version=version;return set;
 }
 } // namespace ayt::stats

@@ -14,6 +14,8 @@ public:
     Result<void> remove(StatSet& set, std::uint64_t id);
     std::span<const Effect> effects() const noexcept { return _effects; }
     std::uint64_t tick() const noexcept { return _tick; }
+    /// Restore manager ownership only after validating exact correspondence with saved modifiers.
+    static Result<EffectManager> restore(const StatSet& set,std::vector<Effect> effects,std::uint64_t tick);
 private:
     std::vector<Effect> _effects;
     std::uint64_t _tick=0;

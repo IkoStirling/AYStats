@@ -23,6 +23,7 @@ Result<CalculationPlan> CalculationPlan::compile(std::vector<Node> nodes,std::ui
     std::unordered_map<std::uint32_t,std::size_t> ids;
     for(std::size_t i=0;i<nodes.size();++i) {
         const auto& n=nodes[i];
+        if(n.op<Op::Input || n.op>Op::Extension)return fail(Error::Unsupported,"unknown author instruction");
         if(!n.id || !ids.emplace(n.id,i).second)return fail(Error::Duplicate,"duplicate/zero node id",std::to_string(n.id));
         if(n.op==Op::Input && n.binding>=inputs)return fail(Error::Missing,"input binding outside range",std::to_string(n.id));
         if(n.op==Op::Random && n.value<=0)return fail(Error::Invalid,"random bound must be positive",std::to_string(n.id));
@@ -34,6 +35,7 @@ Result<CalculationPlan> CalculationPlan::compile(std::vector<Node> nodes,std::ui
     std::function<Result<void>(std::size_t)> visit=[&](std::size_t i)->Result<void>{
         if(seen[i]==2)return {};
         if(seen[i]==1){std::string cycle;for(auto p:path)cycle+=std::to_string(nodes[p].id)+" -> ";return fail(Error::Cycle,"calculation dependency cycle",cycle+std::to_string(nodes[i].id));}
+        if(path.size()>=256)return fail(Error::Limit,"calculation dependency depth limit");
         seen[i]=1;path.push_back(i);const auto& n=nodes[i];const std::uint32_t deps[]{n.a,n.b,n.c};
         for(std::size_t j=0;j<operands(n.op);++j) {
             if(!ids.contains(deps[j]))return fail(Error::Missing,"node operand missing",std::to_string(n.id));

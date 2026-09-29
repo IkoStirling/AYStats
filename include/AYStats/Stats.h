@@ -79,7 +79,8 @@ enum class MutationOp { SetBase, SetCurrent, Increase, Decrease, SetCapacity, Re
 /// A settlement operation. Increase/Decrease require non-negative amount.
 struct Mutation { StatId target = 0; MutationOp op = MutationOp::Decrease; Value amount = 0; };
 /// Signed actual delta and non-negative excess; preserves per-operation attribution.
-struct Change { StatId target = 0; Value before = 0, after = 0, actual = 0, excess = 0; };
+enum class ChangeField { Current, Base, Capacity };
+struct Change { StatId target = 0; Value before = 0, after = 0, actual = 0, excess = 0; ChangeField field=ChangeField::Current; };
 struct Settlement { std::uint64_t beforeVersion = 0, afterVersion = 0; std::vector<Change> changes; };
 
 /// Single-owner persistent state; copy to obtain an independent snapshot, never mutate from workers.

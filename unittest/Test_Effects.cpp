@@ -23,4 +23,10 @@ TEST_CASE(reaction_causality_limits_and_denied_relations) {
     CHECK_TRUE(queue.derive(grandchild,{.calculation=4},true).error().code==Error::Limit);
     CHECK_TRUE(queue.begin().has_value());CHECK_TRUE(queue.derive(root,{.calculation=2},false).error().code==Error::Invalid);CHECK_TRUE(queue.pending()==0);
 }
+TEST_CASE(refresh_existing_identity_and_stack_policy_mismatch) {
+    auto set=fixture();EffectManager manager;Effect effect{.id=1,.key=1,.expires=10,.maxStacks=2,.modifiers={modifier(1,1,20)}};
+    CHECK_TRUE(manager.apply(set,effect,EffectPolicy::Stack,0).has_value());effect.expires=20;CHECK_TRUE(manager.apply(set,effect,EffectPolicy::Refresh,5).has_value());CHECK_TRUE(manager.effects().size()==1);
+    CHECK_TRUE(manager.advance(set,10).has_value());CHECK_TRUE(set.read(statId("attack"))->effective==120);
+    effect.id=2;effect.modifiers[0].handle=2;effect.maxStacks=3;CHECK_TRUE(manager.apply(set,effect,EffectPolicy::Stack,10).error().code==Error::Invalid);CHECK_TRUE(manager.effects().size()==1);
+}
 TEST_SUITE_END

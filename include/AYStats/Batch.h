@@ -64,9 +64,11 @@ struct SettlementRequest {
     std::vector<Binding> inputs;
     std::vector<Target> writes;
 };
-struct BatchSettlement { std::vector<Value> values; std::vector<std::vector<Settlement>> results; };
+struct BatchSettlement { std::vector<Value> values; std::vector<std::vector<Settlement>> results; std::size_t conflictGroups=0,parallelTasks=0; };
+struct SettlementLimits {std::size_t memoryBudget=256ull*1024*1024,maxOperations=4000000;};
 /// Owner-controlled atomic bank transaction. Ordered re-reads shadow state after each request;
 /// Snapshot reads the original bank but still preserves ordered actual deduction attribution.
-Result<BatchSettlement> settleBatch(std::span<StatSet*> bank,std::span<const SettlementRequest> requests,
-                                    BatchSemantics semantics,std::span<const std::uint64_t> expectedVersions);
+Result<BatchSettlement> settleBatch(std::span<StatSet* const> bank,std::span<const SettlementRequest> requests,
+                                    BatchSemantics semantics,std::span<const std::uint64_t> expectedVersions,
+                                    ayt::task::ITaskScheduler* scheduler=nullptr,SettlementLimits limits={});
 } // namespace ayt::stats

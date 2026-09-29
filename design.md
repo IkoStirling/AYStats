@@ -60,3 +60,60 @@ CPU scalar is the reference. Every backend preserves precision, operand order,
 identity mapping, random domain and actual settlement attribution. Strict GPU
 requires bit equality; unsupported profiles fall back only in automatic mode.
 No implicit one-frame latency. GPU is an optional dependency, HEADLESS stays CPU.
+
+## First-version implementation and limits
+
+Schema admits 65,536 definitions, 256 zones per value and dependency depth 256;
+plans admit 4,096 inputs/nodes and depth 256. Modifier cap is 65,536. BatchOptions
+and SettlementLimits expose request/task/temporary-memory limits. They estimate
+backend storage, not caller construction or measured allocator peak. SIMD only
+specializes qualified simple rate plans; generic signed/widened arithmetic stays
+exact. Settlement declares all state access, preserves original request order
+within conservative conflict groups, validates external versions and publishes
+the whole bank only after successful shadow work.
+
+GPU is optional D3D11 hardware FL11 with signed32 interval proof for every
+intermediate and product before rate division. Random/Table/Extension stay CPU.
+Count/input/instruction/resource caps are one million/256/256/128 MiB. Fused shader
+cache is bounded to 64 programs; returned idle buffers to four sets / 128 MiB.
+Automatic requires a measured recipe/device threshold; default CPU. Single-thread
+device/context ownership covers submit/ready/finish/resource reuse. Cancel stops
+delivery, not submitted commands; finish defaults to a bounded ten-second wait.
+Device/readback failure occurs before state publication. Runtime HLSL compilation
+uses d3dcompiler; cross-platform/offline shader publishing remains future scope.
+
+AssetIO separates author definitions, runtime checkpoint and network wire state.
+Runtime restore checks schema, ranges, versions and effect handle ownership and
+rebuilds derived caches atomically. JSON bounds include 16 MiB text and depth 32.
+Loose file replacement is atomic; this is not a ResourceManager/cook/pak pipeline.
+Author field edit and recipe preview are pure. Runtime mode conversion is absent.
+
+Entity integration registers before seal and installs one StatsSystem per World.
+Only fixed Sim advances the integer tick. Scene/Host integration installs subsequent
+edit/play Worlds and disconnects before Host service destruction. Batch entry checks
+World token, EntityHandle, component generation, version and authority. Reset/restore
+changes incarnation and drops queued commands/events. Replica state applies at Sim,
+never local authority writes. Script uses decimal strings for int64 and borrows World;
+unbind before destruction. Network sends complete runtime state, with separately
+provisioned schema. Legacy conversion explicitly chooses one authority and does not
+alter the old Health component's independent startup behavior.
+
+Callbacks run after publication and cannot destroy owners or bypass the mutation
+boundary. Reentrant mutation/configuration/effects fail; enqueue defers commands to
+the next captured fixed-tick queue. Observer exceptions are post-commit diagnostics.
+Inspector uses independent preview and exact fields; Editor publication checks live
+selection, handle/generation, old text and Edit mode, then existing undo commands.
+Full interactive smoke and finer performance telemetry are documented separately
+from the reproducible functional and end-to-end hardware evidence in docs/performance.md.
+
+## Entity notification delivery used by Combat
+
+StatsComponent::commit accepts NotificationDelivery::Immediate (existing default)
+or NextTick. NextTick still commits and publishes authority state synchronously;
+only the observer delivery is deferred until the next Stats Sim update. It reserves
+a bounded 1024-entry queue and the per-settlement change storage before mutation.
+Overflow fails before mutation; configure/restore discard old incarnation events.
+Combat uses this entry to finish hit confirmation, life and result retention before
+observers run. Observer exceptions are post-commit diagnostics and do not turn a
+successful settlement into retryable work. Real integration evidence is in
+AYCombat/unittest/Test_EntityIntegration.cpp (ordering, failure, and backpressure).
