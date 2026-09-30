@@ -1,0 +1,4 @@
+{"version":1,"kind":"stats-definitions","definitions":[
+  {"name":"health","shape":1,"mode":0,"initial":0,"current":50,"capacity":100,"minimum":0,"maximum":1000,"capacityPolicy":0,"capacityFrom":"","baseFrom":"","derivedFactor":10000,"derivedAdd":0,"stage":0,"zones":[]},
+  {"name":"shield","shape":1,"mode":0,"initial":0,"current":30,"capacity":30,"minimum":0,"maximum":1000,"capacityPolicy":0,"capacityFrom":"","baseFrom":"","derivedFactor":10000,"derivedAdd":0,"stage":0,"zones":[]}
+]}

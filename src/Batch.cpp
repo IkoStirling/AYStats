@@ -2,7 +2,7 @@
 #include <AYTask/ITaskScheduler.h>
 #include <AYTask/LambdaTask.h>
 #include <algorithm>
-#include <unordered_set>
+#include <chrono>
 #include <bit>
 #include <numeric>
 #if defined(_M_X64) || defined(__x86_64__)
@@ -128,87 +128,169 @@ Result<std::vector<BatchOutput>> BatchExecutor::scalar(std::vector<BatchInput> i
     auto work=prepare(std::move(inputs),options);if(!work)return std::unexpected(work.error());
     for(std::size_t i=0;i<(*work)->blocks.size();++i)execute(*work,i);if((*work)->fatalFailure.load())return fail(Error::Limit,"scalar batch block allocation failure");return collect(**work);
 }
-Result<BatchSettlement> settleBatch(std::span<StatSet* const> bank,std::span<const SettlementRequest> requests,BatchSemantics semantics,std::span<const std::uint64_t> versions,ayt::task::ITaskScheduler* scheduler,SettlementLimits limits) {
-    if(bank.size()!=versions.size() || bank.size()>65536 || requests.size()>1000000)return fail(Error::Limit,"bank/transaction limit mismatch");
-    if(semantics!=BatchSemantics::Snapshot && semantics!=BatchSemantics::Ordered)return fail(Error::Invalid,"unknown batch semantics");
-    std::size_t bytes=0,operations=0;
-    const auto reserve=[&](std::size_t count,std::size_t stride){if(!stride || bytes>limits.memoryBudget || count>(limits.memoryBudget-bytes)/stride)return false;bytes+=count*stride;return true;};
-    if(!reserve(requests.size(),96))return fail(Error::Limit,"settlement request workspace budget");
-    for(auto* state:bank){if(!state)return fail(Error::Invalid,"null settlement state");if(!reserve(state->rows().size(),sizeof(Row)) || !reserve(state->modifiers().size(),sizeof(Modifier)))return fail(Error::Limit,"settlement shadow budget");}
-    for(const auto& request:requests){if(request.writes.size()>limits.maxOperations-operations)return fail(Error::Limit,"settlement operation limit");operations+=request.writes.size();if(!reserve(request.writes.size(),128) || !reserve(request.inputs.size(),16))return fail(Error::Limit,"settlement result/access budget");}
-    std::unordered_set<StatSet*> pointers;std::vector<StatSet> shadow;shadow.reserve(bank.size());
-    for(std::size_t i=0;i<bank.size();++i) {
-        if(!bank[i] || !pointers.insert(bank[i]).second)return fail(Error::Duplicate,"null/duplicate bank state");
-        if(bank[i]->version()!=versions[i])return fail(Error::Stale,"bank version mismatch");shadow.push_back(*bank[i]);
-    }
-    const auto n=requests.size();
-    std::vector<std::size_t> parent(n);std::iota(parent.begin(),parent.end(),std::size_t(0));
-    const auto root=[&](std::size_t i){while(parent[i]!=i){parent[i]=parent[parent[i]];i=parent[i];}return i;};
-    std::vector<std::vector<std::size_t>> accesses(bank.size());std::vector<std::uint8_t> written(bank.size());
-    std::unordered_set<std::uint64_t> ids;
-    for(std::size_t i=0;i<n;++i) {
-        const auto& request=requests[i];
-        if(!request.id || !ids.insert(request.id).second)return fail(Error::Duplicate,"request identity reused");
-        if(!request.plan || request.inputs.size()!=request.plan->inputCount())return fail(Error::Invalid,"settlement input shape");
-        for(const auto& binding:request.inputs)if(binding.state!=SIZE_MAX){if(binding.state>=bank.size())return fail(Error::Missing,"input state outside bank");accesses[binding.state].push_back(i);}
-        for(const auto& target:request.writes){if(target.state>=bank.size())return fail(Error::Missing,"write state outside bank");accesses[target.state].push_back(i);written[target.state]=1;}
-    }
-    // Read/read sharing does not conflict; any writer conservatively connects all users of a StatSet.
-    for(std::size_t state=0;state<bank.size();++state)if(written[state] && !accesses[state].empty())
-        for(auto index:accesses[state]){auto a=root(accesses[state].front()),b=root(index);if(a!=b)parent[b]=a;}
-    std::vector<std::pair<std::size_t,std::size_t>> order;order.reserve(n);
-    for(std::size_t i=0;i<n;++i)order.emplace_back(root(i),i);std::sort(order.begin(),order.end());
-    std::vector<std::pair<std::size_t,std::size_t>> groups;
-    for(std::size_t start=0;start<n;){auto end=start+1;while(end<n && order[end].first==order[start].first)++end;groups.emplace_back(start,end);start=end;}
-    BatchSettlement output;output.values.resize(n);output.results.resize(n);output.conflictGroups=groups.size();
-    std::vector<std::optional<Diagnostic>> errors(groups.size());
-    const auto evaluateRequest=[&](std::size_t index)->Result<void> {
-        const auto& request=requests[index];
-        std::vector<Value> input,scratch(request.plan->instructions().size());input.reserve(request.inputs.size());
-        for(const auto& binding:request.inputs) {
-            if(binding.state==SIZE_MAX){input.push_back(binding.literal);continue;}
-            if(binding.state>=bank.size())return fail(Error::Missing,"input state outside bank");
-            const auto& state=semantics==BatchSemantics::Ordered?shadow[binding.state]:*bank[binding.state];
-            auto row=state.read(binding.stat);if(!row)return std::unexpected(row.error());
-            switch(binding.field){case ReadField::Effective:input.push_back(row->effective);break;case ReadField::Current:input.push_back(row->current);break;case ReadField::Capacity:input.push_back(row->capacity);break;case ReadField::Base:input.push_back(row->base);break;default:return fail(Error::Invalid,"unknown read field");}
+Result<SettlementRequest> prepareRecipeRequest(std::shared_ptr<const RecipeBook> recipes,const AttributeRequest& action) {
+    if(!action.id || !action.stat || action.operation<AttributeOp::Increase || action.operation>AttributeOp::Set ||
+       (action.operation!=AttributeOp::Set && action.amount<0))return fail(Error::Invalid,"invalid recipe action identity/operation/amount");
+    const Recipe* selected=nullptr;
+    if(recipes){auto r=recipes->select(action.stat,action.operation,action.recipe);if(!r)return std::unexpected(r.error());selected=*r;}
+    else if(!action.recipe.empty())return fail(Error::Missing,"no recipes configured");
+    SettlementRequest request;request.id=action.id;request.context=action.context;
+    if(selected) {
+        request.plan=std::shared_ptr<const CalculationPlan>(std::move(recipes),&selected->plan);
+        for(const auto& input:selected->inputs) {
+            if(input.source==InputSource::Amount){request.inputs.push_back({.literal=action.amount});continue;}
+            if(input.source==InputSource::Constant){request.inputs.push_back({.literal=input.constant});continue;}
+            if(input.source==InputSource::SourceStat && !action.source)return fail(Error::Missing,"recipe requires a source state");
+            ReadField field=ReadField::Effective;
+            switch(input.field){case InputField::Effective:break;case InputField::Base:field=ReadField::Base;break;
+                case InputField::Current:field=ReadField::Current;break;case InputField::Capacity:field=ReadField::Capacity;break;}
+            request.inputs.push_back({input.source==InputSource::SourceStat?*action.source:action.target,input.stat,field});
         }
-        auto value=request.plan->evaluate(input,request.context,scratch);if(!value)return std::unexpected(value.error());
-        output.values[index]=*value;std::vector<Settlement> results;
-        for(const auto& target:request.writes) {
-            if(target.state>=bank.size())return fail(Error::Missing,"write state outside bank");
-            auto& state=shadow[target.state];Mutation op{target.stat,target.op,*value};auto result=state.commit(std::span(&op,1),state.version());
-            if(!result)return std::unexpected(result.error());results.push_back(std::move(*result));
+    } else {
+        static const auto direct=std::make_shared<const CalculationPlan>(CalculationPlan::compile({{.id=1,.op=Op::Input}},1,1).value());
+        request.plan=direct;request.inputs={{.literal=action.amount}};
+    }
+    request.writes.push_back({.state=action.target,.stat=action.stat,.attribute=action.operation});
+    return request;
+}
+namespace detail {
+class SettlementAccess {
+public:
+    static Result<Settlement> commit(StatSet& shadow,const Mutation& operation,std::vector<std::uint8_t>& scratch) {
+        return shadow.commitShadow(std::span(&operation,1),shadow.version(),scratch);
+    }
+};
+}
+Result<BatchSettlement> settleBatch(std::span<StatSet* const> bank,std::span<const SettlementRequest> requests,BatchSemantics semantics,std::span<const std::uint64_t> versions,ayt::task::ITaskScheduler* scheduler,SettlementLimits limits,SettlementMetrics* metrics) {
+    using Clock=std::chrono::steady_clock;
+    if(metrics)*metrics={};
+    const auto stamp=[&]{return metrics?Clock::now():Clock::time_point{};};
+    const auto elapsed=[](auto a,auto b){return std::chrono::duration<double,std::milli>(b-a).count();};
+    auto phase=stamp();
+    try {
+        if(bank.size()!=versions.size() || bank.size()>65536 || requests.size()>1000000)return fail(Error::Limit,"bank/transaction limit mismatch");
+        if(semantics!=BatchSemantics::Snapshot && semantics!=BatchSemantics::Ordered)return fail(Error::Invalid,"unknown batch semantics");
+        const auto n=requests.size();std::size_t bytes=0,operations=0,maxInputs=0,maxInstructions=0,maxRows=0;
+        const auto reserve=[&](std::size_t count,std::size_t stride){if(!stride || bytes>limits.memoryBudget || count>(limits.memoryBudget-bytes)/stride)return false;bytes+=count*stride;return true;};
+        // Outputs, sorted IDs and stable request/group indices. Input ownership is caller-side.
+        if(!reserve(n,sizeof(Value)+sizeof(std::vector<Settlement>)+3*sizeof(std::size_t)))return fail(Error::Limit,"settlement request workspace budget");
+        if(!reserve(bank.size(),sizeof(StatSet)+sizeof(StatSet*)+4*sizeof(std::size_t)+sizeof(std::uint8_t)))return fail(Error::Limit,"settlement bank workspace budget");
+        for(auto* state:bank){
+            if(!state)return fail(Error::Invalid,"null settlement state");
+            if(!reserve(state->rows().size(),sizeof(Row)) || !reserve(state->modifiers().size(),sizeof(Modifier)))return fail(Error::Limit,"settlement shadow budget");
+            maxRows=std::max(maxRows,state->rows().size());
         }
-        output.results[index]=std::move(results);return {};
-    };
-    const auto executeGroups=[&](std::size_t begin,std::size_t end) {
-        for(auto g=begin;g<end;++g) {
-            for(auto pos=groups[g].first;pos<groups[g].second;++pos) {
-                try {auto r=evaluateRequest(order[pos].second);if(!r){errors[g]=r.error();break;}}
+        std::vector<StatSet*> pointers(bank.begin(),bank.end());std::sort(pointers.begin(),pointers.end(),std::less<StatSet*>{});
+        if(std::adjacent_find(pointers.begin(),pointers.end())!=pointers.end())return fail(Error::Duplicate,"duplicate bank state");
+        for(std::size_t i=0;i<bank.size();++i)if(bank[i]->version()!=versions[i])return fail(Error::Stale,"bank version mismatch");
+        std::vector<std::uint64_t> ids;ids.reserve(n);std::vector<std::uint8_t> written(bank.size());
+        for(const auto& request:requests) {
+            if(!request.id)return fail(Error::Duplicate,"zero request identity");ids.push_back(request.id);
+            if(!request.plan || request.inputs.size()!=request.plan->inputCount())return fail(Error::Invalid,"settlement input shape");
+            if(request.writes.size()>limits.maxOperations-operations)return fail(Error::Limit,"settlement operation limit");operations+=request.writes.size();
+            // One owned Settlement vector and up to two Change records per write.
+            if(!reserve(request.writes.size(),sizeof(Settlement)+2*sizeof(Change)))return fail(Error::Limit,"settlement result budget");
+            maxInputs=std::max(maxInputs,request.inputs.size());maxInstructions=std::max(maxInstructions,request.plan->instructions().size());
+            for(const auto& binding:request.inputs)if(binding.state!=SIZE_MAX && binding.state>=bank.size())return fail(Error::Missing,"input state outside bank");
+            for(const auto& target:request.writes){if(target.state>=bank.size())return fail(Error::Missing,"write state outside bank");written[target.state]=1;}
+        }
+        std::sort(ids.begin(),ids.end());
+        if(std::adjacent_find(ids.begin(),ids.end())!=ids.end())return fail(Error::Duplicate,"request identity reused");
+        auto now=stamp();if(metrics)metrics->validationMs=elapsed(phase,now);phase=now;
+        // Union written objects, not requests. Sharing an exclusively read-only source is safe.
+        std::vector<std::size_t> parent(bank.size());std::iota(parent.begin(),parent.end(),std::size_t(0));
+        const auto root=[&](std::size_t i){while(parent[i]!=i){parent[i]=parent[parent[i]];i=parent[i];}return i;};
+        const auto accessedWriter=[&](const SettlementRequest& request,auto&& visit){
+            for(const auto& binding:request.inputs)if(binding.state!=SIZE_MAX && written[binding.state])visit(binding.state);
+            for(const auto& target:request.writes)visit(target.state);
+        };
+        for(const auto& request:requests) {
+            std::size_t first=SIZE_MAX;
+            accessedWriter(request,[&](std::size_t state){const auto r=root(state);if(first==SIZE_MAX)first=r;else if(r!=first)parent[r]=first;});
+        }
+        std::vector<std::size_t> requestGroups(n),stateGroups(bank.size(),SIZE_MAX),counts;
+        for(std::size_t i=0;i<n;++i) {
+            std::size_t writer=SIZE_MAX;accessedWriter(requests[i],[&](std::size_t state){writer=root(state);});
+            std::size_t group;
+            if(writer==SIZE_MAX){group=counts.size();counts.push_back(0);}
+            else {auto& assigned=stateGroups[writer];if(assigned==SIZE_MAX){assigned=counts.size();counts.push_back(0);}group=assigned;}
+            requestGroups[i]=group;++counts[group];
+        }
+        const auto groupCount=counts.size();
+        if(!reserve(counts.capacity(),sizeof(std::size_t)) || !reserve(groupCount,2*sizeof(std::size_t)+sizeof(std::optional<Diagnostic>)))return fail(Error::Limit,"settlement group workspace budget");
+        std::vector<std::pair<std::size_t,std::size_t>> groups;groups.reserve(groupCount);
+        for(std::size_t start=0,g=0;g<groupCount;++g){const auto end=start+counts[g];groups.emplace_back(start,end);counts[g]=start;start=end;}
+        std::vector<std::size_t> order(n);
+        for(std::size_t i=0;i<n;++i)order[counts[requestGroups[i]]++]=i;
+        const auto taskLimit=scheduler?std::max<std::size_t>(1,std::min<std::size_t>(scheduler->numThreads(),64))*4:1;
+        const auto chunk=std::max<std::size_t>(64,groupCount/taskLimit+(groupCount%taskLimit?1:0));
+        const auto taskCount=scheduler && groupCount>1?groupCount/chunk+(groupCount%chunk?1:0):1;
+        if(!reserve(taskCount,2*((maxInputs+maxInstructions)*sizeof(Value)+maxRows)+sizeof(SettlementMetrics)+256))return fail(Error::Limit,"settlement scratch budget");
+        now=stamp();if(metrics)metrics->groupingMs=elapsed(phase,now);phase=now;
+        std::vector<StatSet> shadow;shadow.reserve(bank.size());
+        for(auto* state:bank){shadow.push_back(*state);if(metrics){++metrics->copiedStates;metrics->copiedBytes+=state->rows().size_bytes()+state->modifiers().size_bytes();}}
+        now=stamp();if(metrics)metrics->cloneMs=elapsed(phase,now);phase=now;
+        BatchSettlement output;output.values.resize(n);output.results.resize(n);output.conflictGroups=groupCount;
+        std::vector<std::optional<Diagnostic>> errors(groupCount);
+        std::atomic_bool workerAllocationFailed=false;
+        std::vector<SettlementMetrics> workerMetrics(metrics?taskCount:0);
+        struct Scratch {std::vector<Value> inputs,plan;std::vector<std::uint8_t> rebuild;};
+        const auto evaluateRequest=[&](std::size_t index,Scratch& scratch,SettlementMetrics* probe)->Result<void> {
+            const auto& request=requests[index];const auto before=stamp();
+            if(probe){probe->scratchGrowths+=scratch.inputs.capacity()<request.inputs.size();probe->scratchGrowths+=scratch.plan.capacity()<request.plan->instructions().size();}
+            scratch.inputs.resize(request.inputs.size());scratch.plan.resize(request.plan->instructions().size());
+            for(std::size_t i=0;i<request.inputs.size();++i) {
+                const auto& binding=request.inputs[i];if(binding.state==SIZE_MAX){scratch.inputs[i]=binding.literal;continue;}
+                const auto& state=semantics==BatchSemantics::Ordered?shadow[binding.state]:*bank[binding.state];
+                auto row=state.read(binding.stat);if(!row)return std::unexpected(row.error());
+                if((binding.field==ReadField::Current || binding.field==ReadField::Capacity) && state.schema()->definitions()[*state.schema()->index(binding.stat)].shape!=Shape::Pool)return fail(Error::Invalid,"current/capacity binding requires a pool");
+                switch(binding.field){case ReadField::Effective:scratch.inputs[i]=row->effective;break;case ReadField::Current:scratch.inputs[i]=row->current;break;case ReadField::Capacity:scratch.inputs[i]=row->capacity;break;case ReadField::Base:scratch.inputs[i]=row->base;break;default:return fail(Error::Invalid,"unknown read field");}
+            }
+            auto value=request.plan->evaluate(scratch.inputs,request.context,scratch.plan);if(!value)return std::unexpected(value.error());
+            const auto evaluated=stamp();if(probe){probe->evaluationWorkerMs+=elapsed(before,evaluated);++probe->evaluatedRequests;}
+            output.values[index]=*value;auto& results=output.results[index];results.reserve(request.writes.size());
+            for(const auto& target:request.writes) {
+                auto& state=shadow[target.state];Mutation operation{target.stat,target.op,*value};
+                if(target.attribute){auto translated=attributeMutation(state,target.stat,*target.attribute,*value);if(!translated)return std::unexpected(translated.error());operation=*translated;}
+                if(probe && operation.op==MutationOp::SetBase)probe->scratchGrowths+=scratch.rebuild.capacity()<state.rows().size();
+                auto result=detail::SettlementAccess::commit(state,operation,scratch.rebuild);
+                if(!result)return std::unexpected(result.error());results.push_back(std::move(*result));if(probe)++probe->committedWrites;
+            }
+            if(probe)probe->mutationWorkerMs+=elapsed(evaluated,stamp());return {};
+        };
+        const auto executeGroups=[&](std::size_t begin,std::size_t end,std::size_t worker) noexcept {
+            try {
+            Scratch scratch;auto* probe=metrics?&workerMetrics[worker]:nullptr;
+            for(auto g=begin;g<end;++g)for(auto pos=groups[g].first;pos<groups[g].second;++pos) {
+                try {auto result=evaluateRequest(order[pos],scratch,probe);if(!result){errors[g]=std::move(result.error());break;}}
+                catch(const std::bad_alloc&){workerAllocationFailed.store(true,std::memory_order_relaxed);break;}
                 catch(const std::exception& e){errors[g]=Diagnostic{Error::Invalid,e.what(),{}};break;}
                 catch(...){errors[g]=Diagnostic{Error::Invalid,"settlement extension exception",{}};break;}
             }
-        }
-    };
-    if(scheduler && groups.size()>1) {
-        std::vector<std::shared_ptr<ayt::task::ITask>> tasks;
-        const auto chunk=std::max<std::size_t>(64,groups.size()/4096+1);
-        for(std::size_t begin=0;begin<groups.size();begin+=chunk) {
-            auto lambda=[&,begin,end=std::min(groups.size(),begin+chunk)]{executeGroups(begin,end);};
-            auto task=std::shared_ptr<ayt::task::ITask>(new ayt::task::LambdaTask<decltype(lambda)>(std::move(lambda),"AYStats.Settlement"));
-            if(!scheduler->submitOwned(task)){for(const auto& submitted:tasks)scheduler->wait(submitted.get());return fail(Error::Unsupported,"settlement scheduler refused work");}
-            tasks.push_back(std::move(task));
-        }
-        output.parallelTasks=tasks.size();for(const auto& task:tasks)scheduler->wait(task.get());
-    } else executeGroups(0,groups.size());
-    // Pick the earliest failing original request group deterministically.
-    std::optional<std::pair<std::size_t,Diagnostic>> first;
-    for(std::size_t g=0;g<groups.size();++g)if(errors[g]) {
-        const auto index=order[groups[g].first].second;if(!first || index<first->first)first=std::pair{index,*errors[g]};
-    }
-    if(first)return std::unexpected(first->second);
-    // Single owner: revalidate all inputs before publishing any cross-object state.
-    for(std::size_t i=0;i<bank.size();++i)if(bank[i]->version()!=versions[i])return fail(Error::Stale,"bank changed before publication");
-    for(std::size_t i=0;i<bank.size();++i)*bank[i]=std::move(shadow[i]);return output;
+            }catch(...){workerAllocationFailed.store(true,std::memory_order_relaxed);}
+        };
+        if(scheduler && groupCount>1) {
+            std::vector<std::shared_ptr<ayt::task::ITask>> tasks;tasks.reserve(taskCount);
+            // Allocate every task/capture before handing out references to the stack-owned bank.
+            for(std::size_t begin=0;begin<groupCount;begin+=chunk) {
+                auto lambda=[&,begin,end=std::min(groupCount,begin+chunk),worker=tasks.size()]{executeGroups(begin,end,worker);};
+                tasks.emplace_back(new ayt::task::LambdaTask<decltype(lambda)>(std::move(lambda),"AYStats.Settlement"));
+            }
+            std::size_t accepted=0;
+            try {
+                for(const auto& task:tasks){if(!scheduler->submitOwned(task))break;++accepted;}
+            }catch(...) {for(std::size_t i=0;i<accepted;++i)scheduler->wait(tasks[i].get());return fail(Error::Unsupported,"settlement scheduler submission threw");}
+            for(std::size_t i=0;i<accepted;++i)scheduler->wait(tasks[i].get());
+            if(accepted!=tasks.size())return fail(Error::Unsupported,"settlement scheduler refused work");
+            output.parallelTasks=accepted;
+        }else executeGroups(0,groupCount,0);
+        now=stamp();if(metrics){metrics->executionWallMs=elapsed(phase,now);for(const auto& worker:workerMetrics){metrics->evaluationWorkerMs+=worker.evaluationWorkerMs;metrics->mutationWorkerMs+=worker.mutationWorkerMs;metrics->scratchGrowths+=worker.scratchGrowths;metrics->evaluatedRequests+=worker.evaluatedRequests;metrics->committedWrites+=worker.committedWrites;}}phase=now;
+        // Groups were assigned in first-request order; retain deterministic failure priority.
+        if(workerAllocationFailed.load(std::memory_order_relaxed))return fail(Error::Limit,"out of memory");
+        for(const auto& error:errors)if(error)return std::unexpected(*error);
+        for(std::size_t i=0;i<bank.size();++i)if(bank[i]->version()!=versions[i])return fail(Error::Stale,"bank changed before publication");
+        for(std::size_t i=0;i<bank.size();++i)*bank[i]=std::move(shadow[i]);
+        if(metrics)metrics->publicationMs=elapsed(phase,stamp());return output;
+    }catch(const std::bad_alloc&){return fail(Error::Limit,"out of memory");}
 }
 } // namespace ayt::stats

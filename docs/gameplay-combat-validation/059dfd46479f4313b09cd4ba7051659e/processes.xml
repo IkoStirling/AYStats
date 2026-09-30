@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-ninja"
+	tests="3"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="LAPTOP-KQNPDH3L"
+	time="0"
+	timestamp="2026-09-30T00:02:00"
+	>
+	<testcase name="AYCombat_EntityTests" classname="AYCombat_EntityTests" time="0.289337" status="run">
+		<properties>
+			<property name="cmake_labels" value="combat;combat-full;combat-integration;integration"/>
+		</properties>
+		<system-out>
+[AYCombat] 2 suites, 28 cases
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Destroyed entity 2
+[World] Destroyed entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Crea...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="AYCombat_UnitTests" classname="AYCombat_UnitTests" time="0.174753" status="run">
+		<properties>
+			<property name="cmake_labels" value="combat;combat-fast;combat-full;fast"/>
+		</properties>
+		<system-out>
+[AYCombat] 3 suites, 22 cases
+
+Test Summary [AYCombat]
+   Cases: 22 (passed 22, failed 0, skipped 0), selected 22
+   Suites: 3
+   Assertions: 104 (passed 104, failed 0)
+   Time: 127.989 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  27.300 ms  CombatCoreTests.source_snapshot_keeps_attribution_without_live_entity_resolution
+  6.236 ms  CombatHitLedgerTests.release_allows_retry_without_rebinding_and_invalidates_old_lease
+  5.790 ms  CombatHitLedgerTests.invalid_policies_and_cross_domain_work_do_not_reserve_capacity
+  5.529 ms  CombatHitLedgerTests.half_open_windows_and_monotonic_tick_order_reject_late_work
+  5.477 ms  CombatHitLedgerTests.periodic_allowance_does_not_erase_successful_request_identity
+</system-out>
+	</testcase>
+	<testcase name="AYCombat_UnitTests.integration" classname="AYCombat_UnitTests.integration" time="0.136359" status="run">
+		<properties>
+			<property name="cmake_labels" value="combat;combat-full;combat-integration;integration"/>
+		</properties>
+		<system-out>
+[AYCombat] 1 suites, 19 cases
+
+Test Summary [AYCombat]
+   Cases: 19 (passed 19, failed 0, skipped 0), selected 19
+   Suites: 1
+   Assertions: 64 (passed 64, failed 0)
+   Time: 88.222 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  5.953 ms  CombatStatsIntegrationTests.invulnerability_rejects_without_consuming_then_same_request_can_apply
+  5.854 ms  CombatStatsIntegrationTests.healing_does_not_implicitly_revive_with_default_policy
+  5.739 ms  CombatStatsIntegrationTests.life_tracking_ignores_base_and_capacity_fields_of_the_mapped_stat
+  5.716 ms  CombatStatsIntegrationTests.environment_damage_keeps_effect_provenance_without_actor
+  5.355 ms  CombatStatsIntegrationTests.zero_damage_is_an_applied_hit_with_zero_actual_change
+</system-out>
+	</testcase>
+</testsuite>

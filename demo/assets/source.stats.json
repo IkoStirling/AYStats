@@ -1,0 +1,4 @@
+{"version":1,"kind":"stats-definitions","definitions":[
+  {"name":"attack","shape":0,"mode":1,"initial":100,"current":0,"capacity":0,"minimum":0,"maximum":1000000,"capacityPolicy":0,"capacityFrom":"","baseFrom":"","derivedFactor":10000,"derivedAdd":0,"stage":1,"zones":[{"id":1,"op":0},{"id":2,"op":1},{"id":3,"op":2}]},
+  {"name":"health","shape":1,"mode":0,"initial":0,"current":100,"capacity":100,"minimum":0,"maximum":1000,"capacityPolicy":0,"capacityFrom":"","baseFrom":"","derivedFactor":10000,"derivedAdd":0,"stage":0,"zones":[]}
+]}

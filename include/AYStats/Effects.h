@@ -12,6 +12,8 @@ public:
     Result<void> apply(StatSet& set, Effect effect, EffectPolicy policy, std::uint64_t tick);
     Result<void> advance(StatSet& set, std::uint64_t tick);
     Result<void> remove(StatSet& set, std::uint64_t id);
+    /// Atomically replace exactly one instance; other same-key sources retain their contributions.
+    Result<void> update(StatSet& set, Effect effect, std::uint64_t tick);
     std::span<const Effect> effects() const noexcept { return _effects; }
     std::uint64_t tick() const noexcept { return _tick; }
     /// Restore manager ownership only after validating exact correspondence with saved modifiers.

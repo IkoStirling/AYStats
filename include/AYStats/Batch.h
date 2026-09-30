@@ -1,6 +1,7 @@
 #pragma once
-#include <AYStats/Calculation.h>
+#include <AYStats/Recipes.h>
 #include <atomic>
+#define AY_STATS_SETTLEMENT_METRICS_VERSION 1
 namespace ayt::task { class ITaskScheduler; }
 
 namespace ayt::stats {
@@ -56,7 +57,11 @@ enum class ReadField { Effective, Current, Capacity, Base };
 enum class BatchSemantics { Snapshot, Ordered };
 /// state==SIZE_MAX denotes a literal. All live reads must be declared here.
 struct Binding { std::size_t state=SIZE_MAX; StatId stat=0; ReadField field=ReadField::Effective; Value literal=0; };
-struct Target { std::size_t state=0; StatId stat=0; MutationOp op=MutationOp::Decrease; };
+struct Target {
+    std::size_t state=0; StatId stat=0; MutationOp op=MutationOp::Decrease;
+    /// Recipe actions resolve pool/current or scalar/base against the evolving shadow.
+    std::optional<AttributeOp> attribute;
+};
 struct SettlementRequest {
     std::uint64_t id=0;
     std::shared_ptr<const CalculationPlan> plan;
@@ -64,11 +69,40 @@ struct SettlementRequest {
     std::vector<Binding> inputs;
     std::vector<Target> writes;
 };
+/// Named recipe action with declared bank reads; IDs are unique within one submission.
+struct AttributeRequest {
+    std::uint64_t id=0;
+    std::size_t target=0;
+    StatId stat=0;
+    AttributeOp operation=AttributeOp::Decrease;
+    Value amount=0;
+    std::string recipe;
+    std::optional<std::size_t> source;
+    CalculationContext context;
+};
+/// Retains the selected immutable plan/book. No state is sampled until settleBatch executes.
+/// An empty selection uses the authored default, or direct amount when no default exists.
+Result<SettlementRequest> prepareRecipeRequest(std::shared_ptr<const RecipeBook> recipes,
+                                             const AttributeRequest& action);
 struct BatchSettlement { std::vector<Value> values; std::vector<std::vector<Settlement>> results; std::size_t conflictGroups=0,parallelTasks=0; };
 struct SettlementLimits {std::size_t memoryBudget=256ull*1024*1024,maxOperations=4000000;};
+/// Optional diagnostic profiling. Worker times are sums, not additive wall time.
+/// Caller input construction, result destruction and Entity notifications are excluded.
+/// Per-request clocks add overhead only when this probe is supplied. Reset on each call.
+struct SettlementMetrics {
+    double validationMs=0,groupingMs=0,cloneMs=0,evaluationWorkerMs=0,mutationWorkerMs=0,
+           executionWallMs=0,publicationMs=0;
+    std::size_t copiedStates=0,copiedBytes=0,scratchGrowths=0,evaluatedRequests=0,committedWrites=0;
+    /// Populated only by settleEntityBatch, including observer/transport publication.
+    double entityPreparationMs=0,entityPublicationMs=0,notificationMs=0;
+    std::size_t notifiedWrites=0;
+};
 /// Owner-controlled atomic bank transaction. Ordered re-reads shadow state after each request;
 /// Snapshot reads the original bank but still preserves ordered actual deduction attribution.
+/// Reuses scratch per task; copies each state once. All accepted tasks drain before returning.
+/// Scheduler submitOwned must reject/throw before accepting, and wait must complete normally.
 Result<BatchSettlement> settleBatch(std::span<StatSet* const> bank,std::span<const SettlementRequest> requests,
                                     BatchSemantics semantics,std::span<const std::uint64_t> expectedVersions,
-                                    ayt::task::ITaskScheduler* scheduler=nullptr,SettlementLimits limits={});
+                                    ayt::task::ITaskScheduler* scheduler=nullptr,SettlementLimits limits={},
+                                    SettlementMetrics* metrics=nullptr);
 } // namespace ayt::stats

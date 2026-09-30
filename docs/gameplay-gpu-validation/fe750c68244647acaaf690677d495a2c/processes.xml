@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-ninja"
+	tests="1"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="LAPTOP-KQNPDH3L"
+	time="1"
+	timestamp="2026-09-29T23:59:50"
+	>
+	<testcase name="AYStats_GpuTests" classname="AYStats_GpuTests" time="1.46759" status="run">
+		<properties>
+			<property name="cmake_labels" value="gpu;stats;stats-gpu"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 3 cases
+
+Test Summary [AYStats]
+   Cases: 3 (passed 3, failed 0, skipped 0), selected 3
+   Suites: 1
+   Assertions: 26 (passed 26, failed 0)
+   Time: 1408.716 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  639.774 ms  StatsGpuTests.hardware_integer_equivalence_and_non_aligned_tail
+  399.811 ms  StatsGpuTests.qualification_fallback_cancellation_and_device_lifetime
+  369.113 ms  StatsGpuTests.strict32_boundaries_and_interval_rejections
+</system-out>
+	</testcase>
+</testsuite>

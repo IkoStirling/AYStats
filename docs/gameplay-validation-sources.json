@@ -1,0 +1,231 @@
+{
+  "observedAtUtc": "2026-09-29T16:13:19.7543487Z",
+  "baselineCommit": "2d73aec7f8ad8e7c2b51a1d515a798e67a522383",
+  "state": "verified working tree, not a release snapshot",
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "82afdb8a4a0fa374ff4a52ba04c9b1559c4c0d7dcca68996177d40fc2343987c"
+    },
+    {
+      "path": "demo/assets/shielded-hit.plan.json",
+      "sha256": "a4f4cdb8bf14f7fee4b86bbc5ff470eecbc782d6d85157394c95e1797ec12df1"
+    },
+    {
+      "path": "demo/assets/source.stats.json",
+      "sha256": "b8219a143da3df383a92fa9ddb8654b643c0548bf67de8dbb2a6aee911cd490f"
+    },
+    {
+      "path": "demo/assets/target.stats.json",
+      "sha256": "c1390a05a307ccb1ec89fea3345b40ddd4b94dba0145744c70962a5a57c36d72"
+    },
+    {
+      "path": "demo/GameplayExample.cpp",
+      "sha256": "dca528366c43951924787438d396000656f024294e5f389b364e8abeebc2caa3"
+    },
+    {
+      "path": "demo/GameplayScenario.h",
+      "sha256": "943023a737b42dd9c0863d86a52d37d9f433eaf65791c7687390fcff3c1e8230"
+    },
+    {
+      "path": "demo/GpuBenchmark.cpp",
+      "sha256": "805dffa3cb6129a97f226ce966bc0540ece9df9b2858d2a2f2dc2f65a0531940"
+    },
+    {
+      "path": "demo/MetricsBenchmark.cpp",
+      "sha256": "d2d0cdf2c8ef87c7f5ec61117ef0e6b2d0f195e567f1b0d58910cbd7578f2d88"
+    },
+    {
+      "path": "demo/SettlementBenchmark.cpp",
+      "sha256": "bbbe6cfd631cc4ca190f749d821c2b61eb19353f69e9b7d7a2506afe444d2a3a"
+    },
+    {
+      "path": "demo/StatsBenchmark.cpp",
+      "sha256": "0b292697229cdd822ec6e7910fba23732520d678368a6ba1133d82a3450fd41a"
+    },
+    {
+      "path": "include/AYStats/AssetIO.h",
+      "sha256": "88030e2dac426873ff46b5983aeacc42184fddee90b551f1c6a43e01dfd8cf4f"
+    },
+    {
+      "path": "include/AYStats/Authoring.h",
+      "sha256": "d174faf3a924ade00d591589d6977b6299b590381ba80cfac3e6ce79b10c5b63"
+    },
+    {
+      "path": "include/AYStats/Batch.h",
+      "sha256": "830c1841385446801ef570de2685aed1e338bad1f9a261e9a36dc6ed153e897b"
+    },
+    {
+      "path": "include/AYStats/Calculation.h",
+      "sha256": "7373be07adbc2423a02e69cd2f859484021e5869aee2a4fc0bb17e165a27347e"
+    },
+    {
+      "path": "include/AYStats/Effects.h",
+      "sha256": "0b51ff55d0724c4ba5d1cdeace00c8b738fe3be50171ec2fcd26355a8d9a560e"
+    },
+    {
+      "path": "include/AYStats/EntityIntegration.h",
+      "sha256": "d584c82eae2f3fe1fbd69beddb49ca8b7984e8355452528d0379e04f5b85d067"
+    },
+    {
+      "path": "include/AYStats/Gpu.h",
+      "sha256": "a76f8a95c44b9e249c44d32c4324ab8a6b314b596d2876a31caacb2739055b51"
+    },
+    {
+      "path": "include/AYStats/Inspector.h",
+      "sha256": "bdcb4b9a16e7b86bd50605b45f5709c070196396826f072b32be548bd6adeea1"
+    },
+    {
+      "path": "include/AYStats/Recipes.h",
+      "sha256": "67ef8c43f1efa3306f7ae3b3f426b4e69d12dacb65a056c69f523bd9c0cf4fb0"
+    },
+    {
+      "path": "include/AYStats/SceneIntegration.h",
+      "sha256": "0d34213145a37aa4c782f8fd119a6a04daea1f32a7a93374ed1e2d0519c17f88"
+    },
+    {
+      "path": "include/AYStats/ScriptIntegration.h",
+      "sha256": "95fd91a48d627f4ac55bfe24a033716c7d0df039d82695c3f1165461f32283e6"
+    },
+    {
+      "path": "include/AYStats/Stats.h",
+      "sha256": "ae021b9e3f112f091dfdd8c6b8425ffd9a72ad6b2c365440898af56e5e62ba13"
+    },
+    {
+      "path": "src/AssetIO.cpp",
+      "sha256": "34d49d77afb87b39faea03cc59b620909f0b1bc5427f73eca438bb4048e833f4"
+    },
+    {
+      "path": "src/Authoring.cpp",
+      "sha256": "f5402aef04049b968336a8acfb55cabdf0497405a885b2d21429a61a10ac2862"
+    },
+    {
+      "path": "src/Batch.cpp",
+      "sha256": "ac44e5e78490fde9d4ba5ceaabb8827cfc5a50ee7a5a2745ba5245fa31469af6"
+    },
+    {
+      "path": "src/Calculation.cpp",
+      "sha256": "a2d471242733beb1419c22d3c3d12ee94801d066b3b2035eca3ce945a48257b8"
+    },
+    {
+      "path": "src/Effects.cpp",
+      "sha256": "f93e9727c313dd752ba96f7cd57b63a1be09452fc18faa0b7aa054857b8b3feb"
+    },
+    {
+      "path": "src/EntityIntegration.cpp",
+      "sha256": "1d0b3c67ecef72ee4b0431a1194235876c8d000b19e36f9c80cb3cf24523e947"
+    },
+    {
+      "path": "src/Gpu.cpp",
+      "sha256": "63c7b3ea5aee69a741fdab144ab7735dfa974662ba9c5e186c521c07f04e0d06"
+    },
+    {
+      "path": "src/HostIntegration.cpp",
+      "sha256": "fddf65493f94b9153de899eda66ef8676594dd9401574ec1445b99a26f70362e"
+    },
+    {
+      "path": "src/Inspector.cpp",
+      "sha256": "fba0d05fb6ab057d222013bd666426060944e6a19ebe89a6db4fe700da922c76"
+    },
+    {
+      "path": "src/Recipes.cpp",
+      "sha256": "89024b503063042f7243713e3e70cb28d48ca8270b45fca8fd7c34c570d4409b"
+    },
+    {
+      "path": "src/SceneIntegration.cpp",
+      "sha256": "48b4889011f24e30580c7580d5250be95f90c855676172c620c649692e38b37e"
+    },
+    {
+      "path": "src/ScriptIntegration.cpp",
+      "sha256": "a4aff1fe4a2e09d92fc68ea8869ddf2caf0d0d22432ee4c0ca7de009dd128884"
+    },
+    {
+      "path": "src/Stats.cpp",
+      "sha256": "45743a76ed13531b1c6c95f4d15537bbc0e783f5d1f2c23accdfa88e8dc30413"
+    },
+    {
+      "path": "unittest/CMakeLists.txt",
+      "sha256": "76a51d232e9f771f83cea75e851201f9a4f0ccabebff9055d8de8d8bf06248c3"
+    },
+    {
+      "path": "unittest/Fixtures.h",
+      "sha256": "661648b86bbea75b0c9e44bb7ee8e69a874977a70ed10e535e8786d327d4ebd8"
+    },
+    {
+      "path": "unittest/main.cpp",
+      "sha256": "ed3ea0f3da14eda67b36a5c31e5b0e8dd6dfcfd9ec5d14d8206f4d1de790efce"
+    },
+    {
+      "path": "unittest/Test_Assets.cpp",
+      "sha256": "c6a1ff86a57fc39cf14709f2372328293b2f1f9c67e3cd198c037705208eca25"
+    },
+    {
+      "path": "unittest/Test_Authoring.cpp",
+      "sha256": "0d82db3662d7874cc8a66f63f4edd6a4009fd86e24f4509747b718f15cd85fcc"
+    },
+    {
+      "path": "unittest/Test_Batch.cpp",
+      "sha256": "5d0a210da25e6d0c7ad38f359578494633fda4985cfca9301447e75b2aeaf81b"
+    },
+    {
+      "path": "unittest/Test_Calculation.cpp",
+      "sha256": "c5370fe0cf82a42eff6c0ff8b5c990dd7a3474382ced83e97b862656140a790a"
+    },
+    {
+      "path": "unittest/Test_Editor.cpp",
+      "sha256": "978cb3be44210abd0d5096b101e24e607b9793052991d190cae959fad21aa5c7"
+    },
+    {
+      "path": "unittest/Test_Effects.cpp",
+      "sha256": "6a06a3de564fdd35e1d8870a28ceacc44dc4d023d5bdfe603fa298c0ae45b3c0"
+    },
+    {
+      "path": "unittest/Test_Entity.cpp",
+      "sha256": "d17bccefdaa23bb29fe5f9427e91903eac5b1927d06b6cad573280dd11b7a8cc"
+    },
+    {
+      "path": "unittest/Test_Example.cpp",
+      "sha256": "79e5c47cd68c70a354886706a1b546cc1ab3975ca7ccdc3f995a8f070d2f7a80"
+    },
+    {
+      "path": "unittest/Test_GameplayStats.cpp",
+      "sha256": "c7627bb5ede941f693842969221337807d0e643d78fa7ebfb3599fd30b4fa35f"
+    },
+    {
+      "path": "unittest/Test_Gpu.cpp",
+      "sha256": "269bc8ebdf37a979e422d8a0c3f45b717ee29a0896ebbe638c8152eec0bcf8cb"
+    },
+    {
+      "path": "unittest/Test_Host.cpp",
+      "sha256": "356d9dc482adae0c16beb8db743d05078253e51c4a8166b75c0c150393c12222"
+    },
+    {
+      "path": "unittest/Test_Inspector.cpp",
+      "sha256": "69faba85dc37e6073d6b912c9813e751e4481404f9f38c45eff6255dfd7ddb1e"
+    },
+    {
+      "path": "unittest/Test_Network.cpp",
+      "sha256": "1bf11866f2f4d110464cd826e9001c1c7ec34c07771fba74da7f32a93133743e"
+    },
+    {
+      "path": "unittest/Test_Recipes.cpp",
+      "sha256": "4857af2bfeab70c6177bc39f7d755dc32efb543822c959485783ce9a6523a7a3"
+    },
+    {
+      "path": "unittest/Test_Scene.cpp",
+      "sha256": "44831f52e2926e201f9d0f97f716724301709d1b1cff5fa5bec435e59ed21083"
+    },
+    {
+      "path": "unittest/Test_Script.cpp",
+      "sha256": "b1cd083d7933bbaf8fe76d7c3f93c5feae60dc82a28c42da9ff4ea71c3374809"
+    },
+    {
+      "path": "unittest/Test_Stats.cpp",
+      "sha256": "148b938e5ea69662c1636f9f77e6ca09d481ea0eb8b7bacac8fb5bef8bd1701d"
+    },
+    {
+      "path": "unittest/Test_Stress.cpp",
+      "sha256": "d5e85b981df20d2c19ff10be6ef5f9f9cae7ea39f8a9377c55ffc447b0d51e61"
+    }
+  ]
+}

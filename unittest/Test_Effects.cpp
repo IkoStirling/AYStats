@@ -29,4 +29,17 @@ TEST_CASE(refresh_existing_identity_and_stack_policy_mismatch) {
     CHECK_TRUE(manager.advance(set,10).has_value());CHECK_TRUE(set.read(statId("attack"))->effective==120);
     effect.id=2;effect.modifiers[0].handle=2;effect.maxStacks=3;CHECK_TRUE(manager.apply(set,effect,EffectPolicy::Stack,10).error().code==Error::Invalid);CHECK_TRUE(manager.effects().size()==1);
 }
+TEST_CASE(update_replaces_one_instance_and_invalid_replacement_rolls_back) {
+    auto set=fixture();EffectManager manager;
+    Effect a{.id=1,.key=7,.expires=10,.modifiers={modifier(1,1,10)}};
+    Effect b=a;b.id=2;b.modifiers[0].handle=2;b.modifiers[0].rule=2;
+    CHECK_TRUE(manager.apply(set,a,EffectPolicy::Independent,0).has_value());
+    CHECK_TRUE(manager.apply(set,b,EffectPolicy::Independent,0).has_value());
+    a.modifiers[0].value=20;CHECK_TRUE(manager.update(set,a,1).has_value());
+    CHECK_TRUE(manager.effects().size()==2 && set.read(statId("attack"))->effective==130);
+    const auto version=set.version();a.modifiers[0].zone=99;
+    CHECK_FALSE(manager.update(set,a,2).has_value());CHECK_TRUE(set.version()==version);
+    CHECK_TRUE(manager.tick()==1 && set.read(statId("attack"))->effective==130);
+    CHECK_TRUE(manager.remove(set,1).has_value());CHECK_TRUE(set.read(statId("attack"))->effective==110);
+}
 TEST_SUITE_END

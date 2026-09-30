@@ -12,6 +12,7 @@
 - owned SoA、AYTask 分块、有限 SSE2 模板、取消/完成对象；快照与有序批量结算、读写冲突分组。
 - versioned JSON 定义/配方/运行存档、原子 loose 文件写入、独立作者预览。
 - Entity/Sim、World/Entity/组件代次验证、Scene/Host 生命周期、旧 Health 转换、精确字符串脚本读写和复制状态适配。
+- 实体 `increase/decrease/set`、命名 RecipeBook、显式来源/目标输入、统一单次/批量属性操作与独立弱状态监听。
 - 基础 Inspector 字段、修正来源只读视图、recipe JSON/trace 预览及 Editor owner/undo 命令接线。
 - 可选真实 D3D11 strict32 GPU 求值、资格查询、融合 shader、缓冲复用、有界等待与 CPU 回退。
 
@@ -36,6 +37,10 @@ if (!result) throw std::runtime_error(result.error().message);
 高级容量建议定义独立高级 scalar，再由 pool 的 `capacityFrom` 引用它。攻击/治疗通过资源提交改变 current；装备倍率修改容量属性。pool 的普通属性乘区不会隐式乘大当前量或容量。
 
 复杂护盾/吸血示例见 [Test_Example.cpp](unittest/Test_Example.cpp)；不同语义和 80/80 对 100 的实际归属见 [Test_Batch.cpp](unittest/Test_Batch.cpp)。所有 Result 必须检查，StatSet 由单一模拟 owner 写入。
+
+游戏逻辑通常通过当前 World 的 `StatsSystem` 调用 `decrease(handle,"health",30)`、`increase(handle,"power",5)` 或 `set`。池操作改变 current，单值改变 base；可选配方名及来源 handle 接入复杂公式。`changeBatch` 默认 Ordered，显式 Snapshot 用于需要共享批前取值的计算；名字错误/操作不兼容不会回退。实际玩法接入与重放边界见 [gameplay.md](docs/gameplay.md)。
+
+可构建 `AYStats_GameplayExample`（根工程、Entity 接入存在、非默认构建目标）。它读取 [demo/assets](demo/assets)，演示增益→护盾/血量→实际吸血→保存恢复→到期移除，并由实体测试实际运行。命名配方绑定暂由 Host C++ 配置，尚未提供 RecipeBook 资源加载或编辑器配方选择。
 
 ## 目标与接入
 
@@ -64,6 +69,8 @@ pwsh -NoProfile -File scripts/tests/run-module-tests.ps1 -Module AYStats -Tier f
 Assets 需要可发现的 nlohmann_json package。本机便利脚本 [build-local.ps1](tools/build-local.ps1) 定位 VS/Windows SDK；其他机器建议直接配置 toolchain。纯 Core 关闭 BUILD_TESTING、Batch、Assets、Gpu，仅构建 AYStatsCore。
 
 测试层级为 fast、integration、stress、full 与独立 gpu；GPU 不进入 CPU-only full。AYTest 支持 --list、过滤与 case reports；运行器按实际 features 审计用例。性能 benchmark targets 为 EXCLUDE_FROM_ALL；测量方法和原始数据见 [performance.md](docs/performance.md)。
+
+完整 CPU 结算现已按对象复制一次、复用任务缓冲并优化依赖分组，保留原子回滚与逐次归因。可选 `SettlementMetrics` 分别测量核心与实体发布/通知阶段。百万请求同场景对照约提升 2.12–3.16 倍，C++ 分配次数约下降 67%、增量峰值载荷约下降 29%；具体边界、可重建基线和原始采样见 [完整结算性能报告](docs/settlement-performance.md)。
 
 ## 首版边界
 

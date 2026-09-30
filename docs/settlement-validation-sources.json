@@ -1,0 +1,271 @@
+{
+  "observedAtUtc": "2026-09-29T17:06:33.5231103Z",
+  "baselineCommit": "2d73aec7f8ad8e7c2b51a1d515a798e67a522383",
+  "state": "verified working tree, not a release snapshot",
+  "cpuFullCases": 70,
+  "headlessCases": 67,
+  "hardwareGpuCases": 3,
+  "consumerCases": 70,
+  "sdkDoctorErrors": 0,
+  "sdkDoctorWarnings": 0,
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "b6e637ecec37fd835ea4c29e9ef90e719231d11faf809a4e596453cb91faeeba"
+    },
+    {
+      "path": "demo/assets/shielded-hit.plan.json",
+      "sha256": "a4f4cdb8bf14f7fee4b86bbc5ff470eecbc782d6d85157394c95e1797ec12df1"
+    },
+    {
+      "path": "demo/assets/source.stats.json",
+      "sha256": "b8219a143da3df383a92fa9ddb8654b643c0548bf67de8dbb2a6aee911cd490f"
+    },
+    {
+      "path": "demo/assets/target.stats.json",
+      "sha256": "c1390a05a307ccb1ec89fea3345b40ddd4b94dba0145744c70962a5a57c36d72"
+    },
+    {
+      "path": "demo/EntitySettlementBenchmark.cpp",
+      "sha256": "bf3f59c7d30e4fea9ac5ae580b7246b6be5b557b38beb59fb49e09f7d298db47"
+    },
+    {
+      "path": "demo/GameplayExample.cpp",
+      "sha256": "dca528366c43951924787438d396000656f024294e5f389b364e8abeebc2caa3"
+    },
+    {
+      "path": "demo/GameplayScenario.h",
+      "sha256": "943023a737b42dd9c0863d86a52d37d9f433eaf65791c7687390fcff3c1e8230"
+    },
+    {
+      "path": "demo/GpuBenchmark.cpp",
+      "sha256": "805dffa3cb6129a97f226ce966bc0540ece9df9b2858d2a2f2dc2f65a0531940"
+    },
+    {
+      "path": "demo/MetricsBenchmark.cpp",
+      "sha256": "d2d0cdf2c8ef87c7f5ec61117ef0e6b2d0f195e567f1b0d58910cbd7578f2d88"
+    },
+    {
+      "path": "demo/SettlementAllocationProbe.h",
+      "sha256": "272ec8a79e356ce925e4ac84e419b36472be0916726cd2095b6c768211c50694"
+    },
+    {
+      "path": "demo/SettlementBenchmark.cpp",
+      "sha256": "bbbe6cfd631cc4ca190f749d821c2b61eb19353f69e9b7d7a2506afe444d2a3a"
+    },
+    {
+      "path": "demo/SettlementProfileBenchmark.cpp",
+      "sha256": "e885b3e6aa0b79c79e36294fe4495ae7f7241b461b16aa92da22f7f5659b1b87"
+    },
+    {
+      "path": "demo/StatsBenchmark.cpp",
+      "sha256": "0b292697229cdd822ec6e7910fba23732520d678368a6ba1133d82a3450fd41a"
+    },
+    {
+      "path": "include/AYStats/AssetIO.h",
+      "sha256": "88030e2dac426873ff46b5983aeacc42184fddee90b551f1c6a43e01dfd8cf4f"
+    },
+    {
+      "path": "include/AYStats/Authoring.h",
+      "sha256": "d174faf3a924ade00d591589d6977b6299b590381ba80cfac3e6ce79b10c5b63"
+    },
+    {
+      "path": "include/AYStats/Batch.h",
+      "sha256": "772bb7b31e9ec828f5ac2439fd4fe5118f215d355e1afe5e07418cec80ab3542"
+    },
+    {
+      "path": "include/AYStats/Calculation.h",
+      "sha256": "7373be07adbc2423a02e69cd2f859484021e5869aee2a4fc0bb17e165a27347e"
+    },
+    {
+      "path": "include/AYStats/Effects.h",
+      "sha256": "0b51ff55d0724c4ba5d1cdeace00c8b738fe3be50171ec2fcd26355a8d9a560e"
+    },
+    {
+      "path": "include/AYStats/EntityIntegration.h",
+      "sha256": "ec4711e6eeaeb24c16f6da89c37e245cc3ee05947fb50b37c9c25576bc1fa13d"
+    },
+    {
+      "path": "include/AYStats/Gpu.h",
+      "sha256": "a76f8a95c44b9e249c44d32c4324ab8a6b314b596d2876a31caacb2739055b51"
+    },
+    {
+      "path": "include/AYStats/Inspector.h",
+      "sha256": "bdcb4b9a16e7b86bd50605b45f5709c070196396826f072b32be548bd6adeea1"
+    },
+    {
+      "path": "include/AYStats/Recipes.h",
+      "sha256": "67ef8c43f1efa3306f7ae3b3f426b4e69d12dacb65a056c69f523bd9c0cf4fb0"
+    },
+    {
+      "path": "include/AYStats/SceneIntegration.h",
+      "sha256": "0d34213145a37aa4c782f8fd119a6a04daea1f32a7a93374ed1e2d0519c17f88"
+    },
+    {
+      "path": "include/AYStats/ScriptIntegration.h",
+      "sha256": "95fd91a48d627f4ac55bfe24a033716c7d0df039d82695c3f1165461f32283e6"
+    },
+    {
+      "path": "include/AYStats/Stats.h",
+      "sha256": "3fe2f08c688cefcfd8e74f711a503d879d74c3be5e6cec2e608f4808d39947af"
+    },
+    {
+      "path": "src/AssetIO.cpp",
+      "sha256": "34d49d77afb87b39faea03cc59b620909f0b1bc5427f73eca438bb4048e833f4"
+    },
+    {
+      "path": "src/Authoring.cpp",
+      "sha256": "f5402aef04049b968336a8acfb55cabdf0497405a885b2d21429a61a10ac2862"
+    },
+    {
+      "path": "src/Batch.cpp",
+      "sha256": "62b25a1a9a3e05ce1ddcdf63f86afa8701e1f6f55d3ce8d96615852a6abc876e"
+    },
+    {
+      "path": "src/Calculation.cpp",
+      "sha256": "a2d471242733beb1419c22d3c3d12ee94801d066b3b2035eca3ce945a48257b8"
+    },
+    {
+      "path": "src/Effects.cpp",
+      "sha256": "f93e9727c313dd752ba96f7cd57b63a1be09452fc18faa0b7aa054857b8b3feb"
+    },
+    {
+      "path": "src/EntityIntegration.cpp",
+      "sha256": "9e4231b8f908d9b2755a43ce92fea542c463cf9f6806562b9a31016a73b9c070"
+    },
+    {
+      "path": "src/Gpu.cpp",
+      "sha256": "63c7b3ea5aee69a741fdab144ab7735dfa974662ba9c5e186c521c07f04e0d06"
+    },
+    {
+      "path": "src/HostIntegration.cpp",
+      "sha256": "fddf65493f94b9153de899eda66ef8676594dd9401574ec1445b99a26f70362e"
+    },
+    {
+      "path": "src/Inspector.cpp",
+      "sha256": "fba0d05fb6ab057d222013bd666426060944e6a19ebe89a6db4fe700da922c76"
+    },
+    {
+      "path": "src/Recipes.cpp",
+      "sha256": "89024b503063042f7243713e3e70cb28d48ca8270b45fca8fd7c34c570d4409b"
+    },
+    {
+      "path": "src/SceneIntegration.cpp",
+      "sha256": "48b4889011f24e30580c7580d5250be95f90c855676172c620c649692e38b37e"
+    },
+    {
+      "path": "src/ScriptIntegration.cpp",
+      "sha256": "a4aff1fe4a2e09d92fc68ea8869ddf2caf0d0d22432ee4c0ca7de009dd128884"
+    },
+    {
+      "path": "src/Stats.cpp",
+      "sha256": "75aec34b5479df05f7a4676f39ed557b3f412216933c96edc451b9fa9bda9251"
+    },
+    {
+      "path": "tools/benchmark-settlement.ps1",
+      "sha256": "b2b1406ff6a7d1c5724f796d37a70356bfa1c36811a03e8ca39b42b76d469bad"
+    },
+    {
+      "path": "tools/build-local.ps1",
+      "sha256": "c3e8717cde45a8af4a7de86952273d09c60beb1001e985d17aa294fea316606d"
+    },
+    {
+      "path": "unittest/CMakeLists.txt",
+      "sha256": "76a51d232e9f771f83cea75e851201f9a4f0ccabebff9055d8de8d8bf06248c3"
+    },
+    {
+      "path": "unittest/Fixtures.h",
+      "sha256": "661648b86bbea75b0c9e44bb7ee8e69a874977a70ed10e535e8786d327d4ebd8"
+    },
+    {
+      "path": "unittest/main.cpp",
+      "sha256": "ed3ea0f3da14eda67b36a5c31e5b0e8dd6dfcfd9ec5d14d8206f4d1de790efce"
+    },
+    {
+      "path": "unittest/Test_Assets.cpp",
+      "sha256": "c6a1ff86a57fc39cf14709f2372328293b2f1f9c67e3cd198c037705208eca25"
+    },
+    {
+      "path": "unittest/Test_Authoring.cpp",
+      "sha256": "0d82db3662d7874cc8a66f63f4edd6a4009fd86e24f4509747b718f15cd85fcc"
+    },
+    {
+      "path": "unittest/Test_Batch.cpp",
+      "sha256": "a8b39b983be4f2168b136f5660763d08e173065bcb5ea26e57be26eb26191b41"
+    },
+    {
+      "path": "unittest/Test_Calculation.cpp",
+      "sha256": "c5370fe0cf82a42eff6c0ff8b5c990dd7a3474382ced83e97b862656140a790a"
+    },
+    {
+      "path": "unittest/Test_Editor.cpp",
+      "sha256": "978cb3be44210abd0d5096b101e24e607b9793052991d190cae959fad21aa5c7"
+    },
+    {
+      "path": "unittest/Test_Effects.cpp",
+      "sha256": "6a06a3de564fdd35e1d8870a28ceacc44dc4d023d5bdfe603fa298c0ae45b3c0"
+    },
+    {
+      "path": "unittest/Test_Entity.cpp",
+      "sha256": "d17bccefdaa23bb29fe5f9427e91903eac5b1927d06b6cad573280dd11b7a8cc"
+    },
+    {
+      "path": "unittest/Test_Example.cpp",
+      "sha256": "79e5c47cd68c70a354886706a1b546cc1ab3975ca7ccdc3f995a8f070d2f7a80"
+    },
+    {
+      "path": "unittest/Test_GameplayStats.cpp",
+      "sha256": "c6d2c8e51b78bbd7e8edf8c89f868022bb50b7e53f078ae17908dfbc5f422192"
+    },
+    {
+      "path": "unittest/Test_Gpu.cpp",
+      "sha256": "269bc8ebdf37a979e422d8a0c3f45b717ee29a0896ebbe638c8152eec0bcf8cb"
+    },
+    {
+      "path": "unittest/Test_Host.cpp",
+      "sha256": "356d9dc482adae0c16beb8db743d05078253e51c4a8166b75c0c150393c12222"
+    },
+    {
+      "path": "unittest/Test_Inspector.cpp",
+      "sha256": "69faba85dc37e6073d6b912c9813e751e4481404f9f38c45eff6255dfd7ddb1e"
+    },
+    {
+      "path": "unittest/Test_Network.cpp",
+      "sha256": "1bf11866f2f4d110464cd826e9001c1c7ec34c07771fba74da7f32a93133743e"
+    },
+    {
+      "path": "unittest/Test_Recipes.cpp",
+      "sha256": "4857af2bfeab70c6177bc39f7d755dc32efb543822c959485783ce9a6523a7a3"
+    },
+    {
+      "path": "unittest/Test_Scene.cpp",
+      "sha256": "44831f52e2926e201f9d0f97f716724301709d1b1cff5fa5bec435e59ed21083"
+    },
+    {
+      "path": "unittest/Test_Script.cpp",
+      "sha256": "b1cd083d7933bbaf8fe76d7c3f93c5feae60dc82a28c42da9ff4ea71c3374809"
+    },
+    {
+      "path": "unittest/Test_Stats.cpp",
+      "sha256": "148b938e5ea69662c1636f9f77e6ca09d481ea0eb8b7bacac8fb5bef8bd1701d"
+    },
+    {
+      "path": "unittest/Test_Stress.cpp",
+      "sha256": "d5e85b981df20d2c19ff10be6ef5f9f9cae7ea39f8a9377c55ffc447b0d51e61"
+    }
+  ],
+  "performanceExecutables": [
+    {
+      "path": "out/build/stats-core/AYStats_SettlementProfileBenchmark.exe",
+      "sha256": "671649f2fb712ef2a27b4a825fa7512baf6944f7d6cd8f1b0010ef4b9333f1df"
+    },
+    {
+      "path": "out/build/stats-core/AYStats_SettlementAllocationBenchmark.exe",
+      "sha256": "9b0adcd9733870c23634a30638dd29a5f7644f82e3bc1d5b2042f920c97bb050"
+    },
+    {
+      "path": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\aystats-validation-20260929\\bin\\AYStats_EntitySettlementBenchmark.exe",
+      "sha256": "ec76934be4c36ac3dab967c9ba09228d64e4ed03a8054eadc6dd7b28691fc9a7"
+    }
+  ]
+}

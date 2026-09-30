@@ -117,3 +117,57 @@ Combat uses this entry to finish hit confirmation, life and result retention bef
 observers run. Observer exceptions are post-commit diagnostics and do not turn a
 successful settlement into retryable work. Real integration evidence is in
 AYCombat/unittest/Test_EntityIntegration.cpp (ordering, failure, and backpressure).
+
+## Owner-side recipe actions
+
+RecipeBook compiles immutable named target/operation recipes with explicit input
+provenance. Selection cannot silently recover from an incompatible explicit name;
+omitted names use authored defaults, otherwise direct amount. Source/target fields
+are declared as effective/base/current/capacity, with pool-only current/capacity.
+Persistent values remain non-negative. Increase/Decrease reject negative output;
+Set uses the existing authored range checks. Pool actions write current, scalar
+actions write base, rebuilding effective zones without inverse arithmetic.
+
+StatsSystem simple actions and changeBatch share this translation. Batch attribute
+mutations resolve against the evolving shadow even under Snapshot read semantics.
+Owned prepared plans survive World/recipe replacement; they are pure inputs, not
+publication authorization. Low-level delayed settlement still validates captured
+World/entity/component/version identities. Action IDs deduplicate only within one
+submission; gameplay repeat suppression remains above Stats. Independent high-level
+calls allocate different random domains; explicit lower-level contexts provide replay.
+
+Internal StateObserver preflight/publication is separate from gameplay callbacks.
+prepare is pure and may fail before publication. published is synchronous,
+allocation-free/noexcept and cannot mutate owners. Weak lifetime avoids owner-held
+callback cycles. Effect apply/update/remove/expiry and incarnation/replica/detach
+changes propagate even if transport encoding fails. Gameplay callbacks follow
+publication and obey the existing no-reentry/no-destruction contract.
+
+The runnable demo and its authored loose definition/plan assets live under demo/;
+its gameplay policy does not become Core behavior. RecipeBook input binding assets,
+editor selection and resource packaging remain future work. See docs/gameplay.md.
+
+## Complete CPU settlement workspace
+
+The bank transaction clones each participating StatSet once. The public local
+commit remains copy-then-publish; only its private unpublished-shadow path can
+mutate in place and reuse dependency traversal scratch. A failure discards every
+shadow before any live publication. Result records retain each write, including
+zero deductions and excess, in original request order.
+
+Grouping unions globally written bank objects touched by the same request,
+including reads of objects that a later request writes. Shared exclusively
+read-only objects do not conflict. First-encounter group IDs and stable scatter
+preserve group order without sorting request/root pairs. IDs use one sorted
+array rather than one heap node per request. Each task chunk reuses input/plan/
+rebuild buffers; scratch task count is bounded by four per scheduler worker,
+capped at 256. Task objects/captures allocate before submission; refusal or
+throwing submission drains accepted tasks before borrowed transaction storage
+can die. Scheduler rejection/throw must precede acceptance; wait must complete.
+
+Optional SettlementMetrics records core stages and summed worker work. The
+Entity wrapper adds identity/preflight, internal propagation/transport encoding
+and public callback timing. Normal execution skips clock reads. Requested C++
+payload budget and measured C++ allocation peak are distinct from process RSS.
+Controlled before/after evidence, probe overhead and remaining owned-result/
+callback costs are documented in docs/settlement-performance.md.

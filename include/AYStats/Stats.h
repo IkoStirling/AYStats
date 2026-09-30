@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace ayt::stats {
+namespace detail { class SettlementAccess; }
 using Value = std::int64_t;
 using StatId = std::uint64_t;
 inline constexpr Value RateScale = 10000;
@@ -97,6 +98,10 @@ public:
     Result<void> erase(std::uint64_t handle);
     /// Replace a modifier atomically; preserves identity/handle validation.
     Result<void> replace(Modifier modifier);
+    /// Replace/remove an owned modifier group with a single final rebuild.
+    /// Capacity policies see final contributions, never transient remove/reinsert capacity.
+    /// owned snapshots must match exactly; unrelated same-effect contributions are preserved.
+    Result<void> replaceOwnedModifiers(std::span<const Modifier> owned, std::span<const Modifier> modifiers);
     std::uint64_t version() const noexcept { return _version; }
     const std::shared_ptr<const Schema>& schema() const noexcept { return _schema; }
     std::span<const Modifier> modifiers() const noexcept { return _modifiers; }
@@ -105,7 +110,12 @@ public:
     static Result<StatSet> restore(std::shared_ptr<const Schema> schema, std::span<const Row> rows,
                                   std::span<const Modifier> modifiers, std::uint64_t version);
 private:
+    friend class detail::SettlementAccess;
+    // Only an unpublished, exclusively owned batch shadow may use this non-atomic path.
+    Result<Settlement> commitShadow(std::span<const Mutation> operations, std::uint64_t expectedVersion,
+                                    std::vector<std::uint8_t>& rebuildScratch);
     Result<void> rebuild();
+    Result<void> rebuild(std::vector<std::uint8_t>& visited);
     Result<Value> evaluate(std::size_t index, std::vector<std::uint8_t>& visited);
     Result<void> validateModifier(const Modifier& modifier, std::optional<std::uint64_t> replacing = {}) const;
     std::shared_ptr<const Schema> _schema;

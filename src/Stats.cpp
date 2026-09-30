@@ -155,8 +155,12 @@ Result<Value> StatSet::evaluate(std::size_t i,std::vector<std::uint8_t>& seen) {
     seen[i]=2; return _rows[i].effective;
 }
 Result<void> StatSet::rebuild() {
+    std::vector<std::uint8_t> visited;
+    return rebuild(visited);
+}
+Result<void> StatSet::rebuild(std::vector<std::uint8_t>& visited) {
     std::sort(_modifiers.begin(),_modifiers.end(),[](const auto& a,const auto& b){return std::tie(a.target,a.stage,a.zone,a.effect,a.rule,a.hit,a.layer,a.handle)<std::tie(b.target,b.stage,b.zone,b.effect,b.rule,b.hit,b.layer,b.handle);});
-    std::vector<std::uint8_t> visited(_rows.size());
+    visited.assign(_rows.size(),0);
     for(std::size_t i=0;i<_rows.size();++i) if(auto r=evaluate(i,visited);!r) return std::unexpected(r.error());
     return {};
 }
@@ -195,20 +199,56 @@ Result<void> StatSet::replace(Modifier m) {
     if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
     next._version++;*this=std::move(next);return {};
 }
+Result<void> StatSet::replaceOwnedModifiers(std::span<const Modifier> owned,std::span<const Modifier> modifiers) {
+    if(owned.empty() && modifiers.empty())return {};
+    if(modifiers.size()>65536 || owned.size()>65536)return fail(Error::Limit,"effect replacement modifier limit");
+    std::vector<std::uint64_t> handles;handles.reserve(owned.size());
+    for(const auto& previous:owned) {
+        auto found=std::find_if(_modifiers.begin(),_modifiers.end(),[&](const auto& current){return current.handle==previous.handle;});
+        if(found==_modifiers.end() || *found!=previous)return fail(Error::Stale,"effect contribution differs from owned snapshot");
+        handles.push_back(previous.handle);
+    }
+    std::sort(handles.begin(),handles.end());
+    if(std::adjacent_find(handles.begin(),handles.end())!=handles.end())return fail(Error::Duplicate,"duplicate owned modifier handle");
+    auto next=*this;
+    std::erase_if(next._modifiers,[&](const auto& m){return std::binary_search(handles.begin(),handles.end(),m.handle);});
+    if(modifiers.size()>65536-next._modifiers.size())return fail(Error::Limit,"modifier count limit");
+    for(const auto& modifier:modifiers) {
+        if(auto result=next.validateModifier(modifier);!result)return result;
+        next._modifiers.push_back(modifier);
+    }
+    if(auto result=next.rebuild();!result)return result;
+    if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
+    ++next._version;*this=std::move(next);return {};
+}
 Result<Settlement> StatSet::commit(std::span<const Mutation> ops,std::uint64_t expected) {
     if(expected!=_version)return fail(Error::Stale,"state version changed");
     if(ops.size()>65536)return fail(Error::Limit,"transaction operation limit");
     if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
-    auto next=*this;Settlement result{_version,_version,{}};
+    auto next=*this;std::vector<std::uint8_t> scratch;
+    auto result=next.commitShadow(ops,expected,scratch);
+    if(result)*this=std::move(next);
+    return result;
+}
+Result<Settlement> StatSet::commitShadow(std::span<const Mutation> ops,std::uint64_t expected,std::vector<std::uint8_t>& scratch) {
+    if(expected!=_version)return fail(Error::Stale,"state version changed");
+    if(ops.size()>65536)return fail(Error::Limit,"transaction operation limit");
+    if(_version==UINT64_MAX)return fail(Error::Overflow,"state version exhausted");
+    Settlement result{_version,_version,{}};
+    result.changes.reserve(ops.size()+std::count_if(ops.begin(),ops.end(),[](const auto& op){return op.op==MutationOp::SetCapacity;}));
     for(const auto& op:ops) {
         if(op.op<MutationOp::SetBase || op.op>MutationOp::Restore)return fail(Error::Invalid,"unknown mutation operation");
         const auto i=_schema->index(op.target);if(!i)return fail(Error::Missing,"mutation target missing");
-        const auto& d=_schema->definitions()[*i];auto& row=next._rows[*i];
+        const auto& d=_schema->definitions()[*i];auto& row=_rows[*i];
         if(d.lifetime!=Lifetime::Persistent)return fail(Error::Invalid,"cannot commit intermediate value",d.name);
         if(op.op==MutationOp::SetBase) {
             if(d.baseFrom || op.amount<d.minimum || op.amount>d.maximum)return fail(Error::Invalid,"invalid base write",d.name);
-            const auto beforeBase=row.base;row.base=op.amount;if(auto r=next.rebuild();!r)return std::unexpected(r.error());
-            result.changes.push_back({op.target,beforeBase,row.base,row.base-beforeBase,0,ChangeField::Base});continue;
+            const auto beforeBase=row.base;row.base=op.amount;if(auto r=rebuild(scratch);!r)return std::unexpected(r.error());
+            Result<Value> actual=beforeBase==INT64_MIN ?
+                (row.base>=0?Result<Value>(fail(Error::Overflow,"base delta overflow",d.name)):Result<Value>(row.base-INT64_MIN)):
+                add(row.base,-beforeBase);
+            if(!actual)return std::unexpected(actual.error());
+            result.changes.push_back({op.target,beforeBase,row.base,*actual,0,ChangeField::Base});continue;
         }
         if(d.shape!=Shape::Pool)return fail(Error::Invalid,"resource operation requires pool",d.name);
         const auto before=row.current,capacityBefore=row.capacity;Value excess=0;
@@ -236,7 +276,7 @@ Result<Settlement> StatSet::commit(std::span<const Mutation> ops,std::uint64_t e
         if(op.op==MutationOp::SetCapacity)result.changes.push_back({op.target,capacityBefore,row.capacity,row.capacity-capacityBefore,0,ChangeField::Capacity});
     }
     if(ops.empty())return result;
-    next._version++;result.afterVersion=next._version;*this=std::move(next);return result;
+    _version++;result.afterVersion=_version;return result;
 }
 Result<StatSet> StatSet::restore(std::shared_ptr<const Schema> schema,std::span<const Row> rows,std::span<const Modifier> mods,std::uint64_t version) {
     if(mods.size()>65536)return fail(Error::Limit,"saved modifier count limit");

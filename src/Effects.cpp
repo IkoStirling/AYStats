@@ -18,10 +18,11 @@ Result<void> EffectManager::apply(StatSet& set,Effect effect,EffectPolicy policy
         else if(std::count_if(next._effects.begin(),next._effects.end(),[&](const auto& e){return e.key==effect.key;})>1)return fail(Error::Invalid,"refresh key matches multiple instances; supply the existing instance id");
     }
     if(policy==EffectPolicy::Refresh && match!=next._effects.end()) {match->expires=effect.expires;*this=std::move(next);set=std::move(nextSet);return {};}
+    std::vector<Modifier> removed;
     if(policy==EffectPolicy::Replace) {
         for(auto it=next._effects.begin();it!=next._effects.end();) {
             if(it->key!=effect.key){++it;continue;}
-            for(const auto& m:it->modifiers)if(auto r=nextSet.erase(m.handle);!r)return r;
+            removed.insert(removed.end(),it->modifiers.begin(),it->modifiers.end());
             it=next._effects.erase(it);
         }
     }
@@ -31,7 +32,8 @@ Result<void> EffectManager::apply(StatSet& set,Effect effect,EffectPolicy policy
         if(std::size_t(count)>=effect.maxStacks)return fail(Error::Limit,"effect stack limit");
     }
     if(next._effects.size()>=65536)return fail(Error::Limit,"effect count limit");
-    for(auto& m:effect.modifiers) {m.effect=effect.id;if(auto r=nextSet.insert(m);!r)return r;}
+    for(auto& m:effect.modifiers)m.effect=effect.id;
+    if(auto result=nextSet.replaceOwnedModifiers(removed,effect.modifiers);!result)return result;
     next._effects.push_back(std::move(effect));next._tick=tick;set=std::move(nextSet);*this=std::move(next);return {};
 }
 Result<void> EffectManager::advance(StatSet& set,std::uint64_t tick) {
@@ -39,19 +41,34 @@ Result<void> EffectManager::advance(StatSet& set,std::uint64_t tick) {
     if(std::none_of(_effects.begin(),_effects.end(),[&](const auto& e){return e.expires<=tick;})){_tick=tick;return {};}
     auto nextSet=set;auto next=*this;
     std::sort(next._effects.begin(),next._effects.end(),[](const auto& a,const auto& b){return std::tie(a.expires,a.id)<std::tie(b.expires,b.id);});
+    std::vector<Modifier> expired;
     for(auto it=next._effects.begin();it!=next._effects.end();) {
         if(it->expires>tick){++it;continue;}
-        for(const auto& m:it->modifiers)if(auto r=nextSet.erase(m.handle);!r)return r;
+        expired.insert(expired.end(),it->modifiers.begin(),it->modifiers.end());
         it=next._effects.erase(it);
     }
+    if(auto result=nextSet.replaceOwnedModifiers(expired,{});!result)return result;
     next._tick=tick;set=std::move(nextSet);*this=std::move(next);return {};
 }
 Result<void> EffectManager::remove(StatSet& set,std::uint64_t id) {
     auto nextSet=set;auto next=*this;
     auto it=std::find_if(next._effects.begin(),next._effects.end(),[&](const auto& e){return e.id==id;});
     if(it==next._effects.end())return fail(Error::Missing,"effect id missing");
-    for(const auto& m:it->modifiers)if(auto r=nextSet.erase(m.handle);!r)return r;
+    if(auto result=nextSet.replaceOwnedModifiers(it->modifiers,{});!result)return result;
     next._effects.erase(it);set=std::move(nextSet);*this=std::move(next);return {};
+}
+Result<void> EffectManager::update(StatSet& set,Effect effect,std::uint64_t tick) {
+    auto found=std::find_if(_effects.begin(),_effects.end(),[&](const auto& current){return current.id==effect.id;});
+    if(found==_effects.end())return fail(Error::Missing,"effect instance missing");
+    if(found->key!=effect.key || found->maxStacks!=effect.maxStacks)return fail(Error::Invalid,"effect update changed group identity/stack policy");
+    if(effect.modifiers.empty())return fail(Error::Invalid,"effect update needs modifiers");
+    if(tick<_tick || effect.expires<=tick || found->expires<=tick)return fail(Error::Invalid,"effect update has invalid/expired lifetime");
+    auto nextSet=set;auto next=*this;
+    for(auto& modifier:effect.modifiers)modifier.effect=effect.id;
+    if(auto result=nextSet.replaceOwnedModifiers(found->modifiers,effect.modifiers);!result)return result;
+    *std::find_if(next._effects.begin(),next._effects.end(),[&](const auto& current){return current.id==effect.id;})=std::move(effect);
+    if(auto result=next.advance(nextSet,tick);!result)return result;
+    set=std::move(nextSet);*this=std::move(next);return {};
 }
 Result<void> ReactionQueue::begin() {
     if(!_pending.empty())return fail(Error::Reentrant,"pending reactions cannot be reset");

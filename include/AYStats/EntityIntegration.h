@@ -1,6 +1,7 @@
 #pragma once
 #include <AYStats/AssetIO.h>
 #include <AYStats/Batch.h>
+#include <AYStats/Recipes.h>
 #include <AYEntity/IEntity.h>
 #include <AYEntity/EntityHandle.h>
 #include <AYModule/IModule.h>
@@ -11,6 +12,16 @@ namespace ayt::stats {
 inline constexpr std::uint32_t kStatsWire=std::uint32_t(ayt::reflect::FieldAttribute::NetReplicate);
 /// Deferred delivery lets a higher-level transaction finish its own bookkeeping first.
 enum class NotificationDelivery { Immediate, NextTick };
+class StatsComponent;
+enum class PublicationReason { Commit, Effects, Configure, Restore, Replica, Detach };
+/// Internal integration observer, separate from gameplay notifications. Single World owner.
+/// prepare is pure; published is allocation-free/noexcept and cannot mutate owners or World.
+class StateObserver {
+public:
+    virtual ~StateObserver() = default;
+    virtual Result<void> prepare(ayt::entity::EntityHandle, const StatsComponent&, const Schema&, PublicationReason, std::size_t publications) = 0;
+    virtual void published(ayt::entity::EntityHandle, const StatsComponent&, PublicationReason) noexcept = 0;
+};
 #define AY_CURRENT_CLASS StatsComponent
 /// Optional scene/reflection facade. Definitions are authored; wireState is authority-produced.
 class StatsComponent final : public ayt::entity::IComponent {
@@ -20,6 +31,7 @@ public:
     AY_PROPERTY(std::string,definitionsJson,ayt::entity::kAttrSerialize)
     AY_PROPERTY(std::string,wireState,kStatsWire)
     void onAttach(ayt::entity::Entity*) override;
+    void onDetach() override;
     void onStart() override;
     /// Replace authored definitions atomically; invalid data leaves current state intact.
     Result<void> configure(std::shared_ptr<const Schema> schema);
@@ -31,6 +43,10 @@ public:
     void setOnSettled(std::function<void(const Settlement&)> callback) {_onSettled=std::move(callback);}
     Result<void> enqueue(std::vector<Mutation> mutations);
     Result<void> applyEffect(Effect effect,EffectPolicy policy,std::uint64_t tick);
+    /// Remove this manager's contribution atomically, then publish internal state before returning.
+    Result<void> removeEffect(std::uint64_t instance);
+    /// Update one owned instance, including its modifiers, without removing other same-key sources.
+    Result<void> updateEffect(Effect effect, std::uint64_t tick);
     /// Explicit ownership decision by Host; clients cannot commit or apply local effects.
     void setAuthority(bool authority) noexcept {_authority=authority;}
     bool authority() const noexcept {return _authority;}
@@ -44,7 +60,8 @@ public:
 private:
     Result<void> synchronize();
     Result<void> advance(std::uint64_t tick);
-    void publish();
+    Result<void> preparePublication(const Schema&, PublicationReason, std::size_t publications=1);
+    void publish(PublicationReason reason=PublicationReason::Commit);
     void notify(const Settlement& result);
     std::optional<StatSet> _state;
     EffectManager _effects;
@@ -57,8 +74,9 @@ private:
     std::deque<std::vector<Mutation>> _pending;
     std::vector<Settlement> _deferredSettlements;
     std::optional<Diagnostic> _error;
+    ayt::entity::Entity* _owner=nullptr;
     friend class StatsSystem;
-    friend Result<BatchSettlement> settleEntityBatch(ayt::entity::World&,std::uint64_t,std::span<const ayt::entity::EntityHandle>,std::span<const std::uint64_t>,std::span<const std::uint64_t>,std::span<const SettlementRequest>,BatchSemantics,ayt::task::ITaskScheduler*);
+    friend Result<BatchSettlement> settleEntityBatch(ayt::entity::World&,std::uint64_t,std::span<const ayt::entity::EntityHandle>,std::span<const std::uint64_t>,std::span<const std::uint64_t>,std::span<const SettlementRequest>,BatchSemantics,ayt::task::ITaskScheduler*,SettlementMetrics*);
 };
 #undef AY_CURRENT_CLASS
 /// One World-owned Sim lane system; explicit bind avoids singleton tick ambiguity.
@@ -70,9 +88,60 @@ public:
     void bind(ayt::entity::World& world) noexcept {_world=&world;}
     std::uint64_t worldToken() const noexcept {return _token;}
     std::uint64_t tick() const noexcept {return _tick;}
+    /// Weak registration follows observer ownership; replacing public callbacks cannot disconnect it.
+    Result<void> observeState(const std::shared_ptr<StateObserver>& observer);
+    Result<void> preparePublication(ayt::entity::EntityHandle, const StatsComponent&, const Schema&, PublicationReason, std::size_t publications=1);
+    void publish(ayt::entity::EntityHandle, const StatsComponent&, PublicationReason) noexcept;
+    /// Immutable World-level recipe configuration. Replacing it is forbidden during publication.
+    Result<void> setRecipes(std::shared_ptr<const RecipeBook> recipes);
+    struct PreparedCalculation {
+        std::shared_ptr<const RecipeBook> owner;
+        /// Owns the direct plan or aliases the immutable book; survives recipe/World replacement.
+        std::shared_ptr<const CalculationPlan> retainedPlan;
+        const CalculationPlan* plan=nullptr;
+        std::vector<Value> inputs;
+        CalculationContext context;
+    };
+    /// Owner-side pure snapshot; retained input/plan ownership is not delayed commit authorization.
+    Result<PreparedCalculation> prepareCalculation(ayt::entity::EntityHandle target, StatId stat,
+        AttributeOp operation, Value amount, std::string_view recipe={},
+        std::optional<ayt::entity::EntityHandle> source={});
+    /// Gameplay entry: selects recipe, samples inputs and commits through the current component.
+    /// No permission/damage provenance is implied. Pool writes current; scalar writes base.
+    Result<Settlement> change(ayt::entity::EntityHandle target, std::string_view stat, AttributeOp operation,
+        Value amount, std::string_view recipe={}, std::optional<ayt::entity::EntityHandle> source={});
+    Result<Settlement> increase(ayt::entity::EntityHandle target, std::string_view stat, Value amount, std::string_view recipe={}, std::optional<ayt::entity::EntityHandle> source={}) {
+        return change(target,stat,AttributeOp::Increase,amount,recipe,source);
+    }
+    Result<Settlement> decrease(ayt::entity::EntityHandle target, std::string_view stat, Value amount, std::string_view recipe={}, std::optional<ayt::entity::EntityHandle> source={}) {
+        return change(target,stat,AttributeOp::Decrease,amount,recipe,source);
+    }
+    Result<Settlement> set(ayt::entity::EntityHandle target, std::string_view stat, Value amount, std::string_view recipe={}, std::optional<ayt::entity::EntityHandle> source={}) {
+        return change(target,stat,AttributeOp::Set,amount,recipe,source);
+    }
+    struct AttributeAction {
+        std::uint64_t id=0;
+        ayt::entity::EntityHandle target;
+        std::string stat;
+        AttributeOp operation=AttributeOp::Decrease;
+        Value amount=0;
+        std::string recipe;
+        std::optional<ayt::entity::EntityHandle> source;
+    };
+    /// Atomic named actions; all handles/generations/versions are captured on the World owner.
+    /// Ordered matches consecutive single actions; Snapshot explicitly samples the pre-batch bank.
+    /// IDs reject duplicates within this call, not retries across calls; use expected-version
+    /// settleEntityBatch for delayed work. Callbacks see the entire published bank.
+    Result<BatchSettlement> changeBatch(std::span<const AttributeAction> actions,
+        BatchSemantics semantics=BatchSemantics::Ordered, ayt::task::ITaskScheduler* scheduler=nullptr);
 private:
     ayt::entity::World* _world=nullptr;
     std::uint64_t _token=0,_tick=0;
+    std::uint64_t _calculations=0;
+    bool _publishing=false,_changing=false;
+    std::vector<std::weak_ptr<StateObserver>> _observers;
+    std::shared_ptr<const RecipeBook> _recipes;
+    std::shared_ptr<const CalculationPlan> _direct;
 };
 /// Install for each newly created World; does not create a second Host tick authority.
 Result<void> registerStatsSystem(ayt::entity::World& world);
@@ -89,10 +158,11 @@ private:
     ayt::module::ModuleDescriptor _descriptor;
 };
 /// Validate World/Entity/component/state identity before synchronous owned-shadow parallel work.
+/// Optional profiling includes identity/preflight, transport/observers and gameplay callbacks.
 Result<BatchSettlement> settleEntityBatch(ayt::entity::World& world,std::uint64_t worldToken,
     std::span<const ayt::entity::EntityHandle> entities,std::span<const std::uint64_t> componentGenerations,
     std::span<const std::uint64_t> expectedVersions,std::span<const SettlementRequest> requests,
-    BatchSemantics semantics,ayt::task::ITaskScheduler* scheduler=nullptr);
+    BatchSemantics semantics,ayt::task::ITaskScheduler* scheduler=nullptr,SettlementMetrics* metrics=nullptr);
 /// Explicit legacy conversion helpers; callers select one authority rather than two mutable mirrors.
 Result<StatSet> importLegacyHealth(const ayt::entity::HealthComponent& legacy,std::string name="health");
 Result<void> exportLegacyHealth(const StatSet& state,StatId resource,ayt::entity::HealthComponent& legacy);

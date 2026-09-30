@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-ninja"
+	tests="3"
+	failures="1"
+	disabled="0"
+	skipped="0"
+	hostname="LAPTOP-KQNPDH3L"
+	time="0"
+	timestamp="2026-09-29T23:54:16"
+	>
+	<testcase name="AYStats_UnitTests" classname="AYStats_UnitTests" time="0.140246" status="fail">
+		<failure message="Failed"/>
+		<properties>
+			<property name="cmake_labels" value="fast;stats;stats-fast;stats-full"/>
+		</properties>
+		<system-out>
+[AYStats] 7 suites, 34 cases
+  [EXCEPTION] StatsRecipeTests.scalar_decrease_checked_arithmetic_preserves_state_on_overflow (location unknown): Bad expected access
+  [EXCEPTION] StatsRecipeTests.signed_scalar_set_delta_overflow_rolls_back_and_negative_base_can_be_set (location unknown): Bad expected access
+
+Test Summary [AYStats]
+   Cases: 34 (passed 32, failed 2, skipped 0), selected 34
+   Suites: 7
+   Assertions: 1622 (passed 1622, failed 0)
+   Time: 104.644 ms
+
+Problem cases:
+   Suite.Case | Status | Failed checks | Time (ms)
+   StatsRecipeTests.scalar_decrease_checked_arithmetic_preserves_state_on_overflow | exception | 0 | 2.793
+      [exception] location unknown : Bad expected access
+      Case declaration: D:\Aliyat\AliyatEngine\AYRuntime\AYStats\unittest\Test_Recipes.cpp:35
+   StatsRecipeTests.signed_scalar_set_delta_overflow_rolls_back_and_negative_base_can_be_set | exception | 0 | 2.655
+      [exception] location unknown : Bad expected access
+      Case declaration: D:\Aliyat\AliyatEngine\AYRuntime\AYStats\unittest\Test_Recipes.cpp:43
+
+   [SOME TESTS FAILED]
+Slowest cases:
+  6.639 ms  StatsBatchTests.owned_parallel_results_match_scalar_and_block_sizes
+  6.127 ms  StatsBatchTests.named_recipe_bank_is_owned_declared_and_parallel_matches_reference
+  3.870 ms  StatsRecipeTests.configuration_rejects_ambiguous_defaults_names_and_input_shapes
+  3.417 ms  StatsBatchTests.shared_read_only_source_does_not_serialize_independent_targets
+  3.370 ms  StatsEffectTests.update_replaces_one_instance_and_invalid_replacement_rolls_back
+</system-out>
+	</testcase>
+	<testcase name="AYStats_UnitTests.integration" classname="AYStats_UnitTests.integration" time="0.0671879" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 5 cases
+
+Test Summary [AYStats]
+   Cases: 5 (passed 5, failed 0, skipped 0), selected 5
+   Suites: 1
+   Assertions: 25 (passed 25, failed 0)
+   Time: 29.929 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  15.707 ms  StatsAssetTests.atomic_file_write_and_failed_read_leave_owner_unchanged
+  3.856 ms  StatsAssetTests.definitions_and_runtime_roundtrip_keep_zero_health
+  3.800 ms  StatsAssetTests.plan_roundtrip_keeps_stage_ids
+  3.730 ms  StatsAssetTests.malformed_version_and_unsigned_overflow_are_rejected
+  2.827 ms  StatsAssetTests.timed_effect_checkpoint_preserves_expiry_and_random_domain
+</system-out>
+	</testcase>
+	<testcase name="AYStats_StressTests" classname="AYStats_StressTests" time="0.0967558" status="run">
+		<properties>
+			<property name="cmake_labels" value="stats;stats-full;stats-stress;stress"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 1 cases
+
+Test Summary [AYStats]
+   Cases: 1 (passed 1, failed 0, skipped 0), selected 1
+   Suites: 1
+   Assertions: 264 (passed 264, failed 0)
+   Time: 63.722 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  63.720 ms  StatsStressTests.heterogeneous_random_table_and_complex_plans_match_across_workers
+</system-out>
+	</testcase>
+</testsuite>

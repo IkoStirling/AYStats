@@ -1,0 +1,17 @@
+{
+  "observedAtUtc": "2026-09-29T17:05:41.3814307Z",
+  "baseline": false,
+  "samples": 1,
+  "source": "AYRuntime/AYStats",
+  "build": "out/build/stats-core",
+  "executables": [
+    {
+      "path": "D:\\Aliyat\\AliyatEngine\\out\\build\\stats-core\\AYStats_SettlementProfileBenchmark.exe",
+      "sha256": "671649f2fb712ef2a27b4a825fa7512baf6944f7d6cd8f1b0010ef4b9333f1df"
+    },
+    {
+      "path": "D:\\Aliyat\\AliyatEngine\\out\\build\\stats-core\\AYStats_SettlementAllocationBenchmark.exe",
+      "sha256": "9b0adcd9733870c23634a30638dd29a5f7644f82e3bc1d5b2042f920c97bb050"
+    }
+  ]
+}

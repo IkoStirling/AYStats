@@ -1,0 +1,17 @@
+{
+  "observedAtUtc": "2026-09-29T17:02:50.6042122Z",
+  "baseline": true,
+  "samples": 1,
+  "source": "out/settlement-baseline-eff1d3d246934ce0875de86ea988c245",
+  "build": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\aystats-baseline-build-eff1d3d246934ce0875de86ea988c245",
+  "executables": [
+    {
+      "path": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\aystats-baseline-build-eff1d3d246934ce0875de86ea988c245\\AYStats_SettlementProfileBenchmark.exe",
+      "sha256": "0a66a650586b323248b467a007137d2e14b950b10e6504442780edcd9eab1615"
+    },
+    {
+      "path": "C:\\Users\\lenovo\\AppData\\Local\\Temp\\aystats-baseline-build-eff1d3d246934ce0875de86ea988c245\\AYStats_SettlementAllocationBenchmark.exe",
+      "sha256": "93a90b1beea4a3ec5124fd8f7ee398096db90d534b0cb130348f7c997603e4c3"
+    }
+  ]
+}

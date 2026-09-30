@@ -1,0 +1,16 @@
+{
+  "observedAtUtc": "2026-09-29T17:00:02.5139703Z",
+  "baseline": "pre-optimization working tree, measured by preserved statically linked executables",
+  "baselineGitCommit": "2d73aec7f8ad8e7c2b51a1d515a798e67a522383",
+  "sourceArchive": "Batch.cpp and Stats.cpp copied before mutation; headers reconstructed by removing only this change declarations",
+  "baselineArtifacts": [
+    {
+      "name": "before-latency.exe",
+      "Hash": "5092CAD288019B6CA254355D32A94970ADB33088BF7D1D9516675A26BA15FE31"
+    },
+    {
+      "name": "before-allocation.exe",
+      "Hash": "96931D6CE9A68383103A7F5CD33211A62436C42C57865B2D9A9C5F0F0DD3EFA1"
+    }
+  ]
+}
