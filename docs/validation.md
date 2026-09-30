@@ -42,9 +42,9 @@ This does not claim a complete interactive UI smoke, GPU device-loss fault injec
 Implemented and verified named RecipeBook selection/input provenance, owner-side
 increase/decrease/set, shared single/batch attribute translation, owned prepared
 plans, atomic entity changeBatch and independent weak StateObserver publication.
-The module remains experimental. These follow-up changes are retained in the
-working tree; the last local baseline commit is `2d73aec`, with no remote. Shared
-pre-existing/parallel work was preserved rather than staged into a mixed commit.
+The module remains experimental. At the time of this follow-up validation, these
+changes were retained in the working tree above baseline `2d73aec`, with no remote.
+The later baseline integration is recorded at the end of this document.
 
 | Configuration | Passed cases | Evidence |
 | --- | ---: | --- |
@@ -136,6 +136,18 @@ threshold is inferred from CPU settlement measurements.
 
 SDK doctor checks 63 capabilities, 50 modules, 12 search cases and 85 documented
 entry symbols with zero errors/warnings. See [current source fingerprint](settlement-validation-sources.json).
-All changes remain in the existing working trees; no remote was added and no
-push/publish was performed. RecipeBook resource loading/editor selection,
+At the time of this validation, the changes remained in the existing working
+trees; no remote was added and no push/publish was performed. The later baseline
+integration is recorded below. RecipeBook resource loading/editor selection,
 formal cook/pak and earlier production/device-fault validation remain future work.
+
+## Combat-compatible main baseline — 2026-09-30
+
+The validated local snapshot `6ea15f80dde6d154eea1ab1873d55e2d7ae51ccc`
+was fast-forwarded into AYStats `main` after verifying all 170 snapshot file blobs
+against the working tree and confirming the index had no staged changes. The
+fast-forward changed no source files and left the module working tree clean.
+`codex/combat-compatible-stats` still names the same snapshot for traceability.
+The compatible AYCombat implementation is `e0ecf9e`; the engine-root catalog,
+build wiring and plan remain separate workspace changes. Neither module has a
+remote, and no push or publish occurred.
