@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-ninja"
+	tests="7"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="LAPTOP-KQNPDH3L"
+	time="0"
+	timestamp="2026-09-30T11:53:49"
+	>
+	<testcase name="AYStats_EntityTests" classname="AYStats_EntityTests" time="0.1635" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 5 suites, 23 cases
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Destroyed entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Created entity 3
+[World] Created entity 4
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[Wo...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="AYStats_InspectorTests" classname="AYStats_InspectorTests" time="0.0973223" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 2 cases
+
+Test Summary [AYStats]
+   Cases: 2 (passed 2, failed 0, skipped 0), selected 2
+   Suites: 1
+   Assertions: 30 (passed 30, failed 0)
+   Time: 37.961 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  34.158 ms  StatsInspectorTests.recipe_inspector_load_select_preview_and_validate_before_publish
+  3.801 ms  StatsInspectorTests.exact_author_fields_and_readonly_runtime_inspection
+</system-out>
+	</testcase>
+	<testcase name="AYStats_HostTests" classname="AYStats_HostTests" time="0.0616846" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 1 cases
+[World] Initialized
+[World] Initialized
+[World] Shutdown
+[World] Shutdown
+
+Test Summary [AYStats]
+   Cases: 1 (passed 1, failed 0, skipped 0), selected 1
+   Suites: 1
+   Assertions: 10 (passed 10, failed 0)
+   Time: 5.832 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  5.830 ms  StatsHostTests.startup_graph_registers_before_seal_and_unsubscribes_on_shutdown
+</system-out>
+	</testcase>
+	<testcase name="AYStats_UnitTests" classname="AYStats_UnitTests" time="0.188226" status="run">
+		<properties>
+			<property name="cmake_labels" value="fast;stats;stats-fast;stats-full"/>
+		</properties>
+		<system-out>
+[AYStats] 7 suites, 39 cases
+
+Test Summary [AYStats]
+   Cases: 39 (passed 39, failed 0, skipped 0), selected 39
+   Suites: 7
+   Assertions: 17444 (passed 17444, failed 0)
+   Time: 148.662 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  12.828 ms  StatsBatchTests.randomized_multi_write_settlement_matches_public_transaction_reference
+  9.289 ms  StatsBatchTests.named_recipe_bank_is_owned_declared_and_parallel_matches_reference
+  7.520 ms  StatsBatchTests.owned_parallel_results_match_scalar_and_block_sizes
+  4.461 ms  StatsBatchTests.shared_read_only_source_does_not_serialize_independent_targets
+  4.336 ms  StatsBatchTests.cancellation_preserves_owned_results_and_completes_running_blocks
+</system-out>
+	</testcase>
+	<testcase name="AYStats_UnitTests.integration" classname="AYStats_UnitTests.integration" time="0.0780728" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 7 cases
+
+Test Summary [AYStats]
+   Cases: 7 (passed 7, failed 0, skipped 0), selected 7
+   Suites: 1
+   Assertions: 44 (passed 44, failed 0)
+   Time: 37.376 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  16.297 ms  StatsAssetTests.atomic_file_write_and_failed_read_leave_owner_unchanged
+  4.176 ms  StatsAssetTests.recipe_book_roundtrip_retains_authored_provenance_and_defaults
+  3.850 ms  StatsAssetTests.definitions_and_runtime_roundtrip_keep_zero_health
+  3.609 ms  StatsAssetTests.recipe_book_document_rejects_bad_contract_without_fallback
+  3.541 ms  StatsAssetTests.timed_effect_checkpoint_preserves_expiry_and_random_domain
+</system-out>
+	</testcase>
+	<testcase name="AYStats_StressTests" classname="AYStats_StressTests" time="0.106784" status="run">
+		<properties>
+			<property name="cmake_labels" value="stats;stats-full;stats-stress;stress"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 1 cases
+
+Test Summary [AYStats]
+   Cases: 1 (passed 1, failed 0, skipped 0), selected 1
+   Suites: 1
+   Assertions: 264 (passed 264, failed 0)
+   Time: 67.733 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  67.730 ms  StatsStressTests.heterogeneous_random_table_and_complex_plans_match_across_workers
+</system-out>
+	</testcase>
+	<testcase name="AYStats_EditorTests" classname="AYStats_EditorTests" time="0.0969627" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 1 cases
+[World] Initialized
+[World] Created entity 1
+[World] Initialized
+[World] Created entity 1
+[World] Destroyed entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Shutdown
+
+Test Summary [AYStats]
+   Cases: 1 (passed 1, failed 0, skipped 0), selected 1
+   Suites: 1
+   Assertions: 18 (passed 18, failed 0)
+   Time: 14.354 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  14.353 ms  StatsEditorTests.document_author_edit_undo_redo_save_reopen_preserves_zero_initial_state
+</system-out>
+	</testcase>
+</testsuite>

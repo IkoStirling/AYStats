@@ -1,0 +1,72 @@
+{
+  "observedAtUtc": "2026-09-30T03:54:32.4144691Z",
+  "baselineCommit": "602c57c0bab1ee5cd2319b6e4728ac8a1831d11e",
+  "state": "verified working tree, not a release snapshot",
+  "fullStatsCases": 74,
+  "headlessStatsCases": 70,
+  "combatConsumerCases": 90,
+  "sdkDoctorErrors": 0,
+  "sdkDoctorWarnings": 0,
+  "files": [
+    {
+      "path": "AYRuntime/AYStats/include/AYStats/Recipes.h",
+      "sha256": "bf5aacd6554d8d78d7cadc3eaa2b62aef9a6d91027d2ba7b92c7ce6dc490ee33"
+    },
+    {
+      "path": "AYRuntime/AYStats/include/AYStats/AssetIO.h",
+      "sha256": "2a8172363675704f76167dd58d53ee9020e3883268c9576aa4dd536c18cd0e0b"
+    },
+    {
+      "path": "AYRuntime/AYStats/include/AYStats/EntityIntegration.h",
+      "sha256": "ee7239ea904c41864da8a686da56a7557ed4c9e5937c3cad61c6c9e02138452b"
+    },
+    {
+      "path": "AYRuntime/AYStats/include/AYStats/Inspector.h",
+      "sha256": "4698004cac84ec0612fcd4154f7e1afc3199521653755c26cf85865d452b4629"
+    },
+    {
+      "path": "AYRuntime/AYStats/src/AssetIO.cpp",
+      "sha256": "709492024963cc6d37572944f78d0236bc883003b46abe8d99253a1dd1b04cca"
+    },
+    {
+      "path": "AYRuntime/AYStats/src/EntityIntegration.cpp",
+      "sha256": "1e209801ad6e69148717552550bd6aa90dce415a88e492c290e12ca8f73b74aa"
+    },
+    {
+      "path": "AYRuntime/AYStats/src/Inspector.cpp",
+      "sha256": "e9129dd378677823b3dd17d003b6e86bd555c2965c63caaf5ba079fab2d230ab"
+    },
+    {
+      "path": "AYRuntime/AYStats/demo/GameplayScenario.h",
+      "sha256": "33759d2f11b84b2d85a6902b3f72fda33ce6ab40ab719d394ab7b08bab21d34d"
+    },
+    {
+      "path": "AYRuntime/AYStats/demo/assets/combat.stats-recipes.json",
+      "sha256": "fa6f4bf587daee667679994c428b0d9ca895c93329ee85a6ea0f9e6fc8fc9a32"
+    },
+    {
+      "path": "AYRuntime/AYStats/unittest/Test_Assets.cpp",
+      "sha256": "b69270fd55e51f06ca7278f2d54654c8a18b5ef55ed0debdf7b0e2e607c9f3ea"
+    },
+    {
+      "path": "AYRuntime/AYStats/unittest/Test_GameplayStats.cpp",
+      "sha256": "c9aa1a1ad02d938e45342eb060b9264445a4a5fe24e5f7aae72eada0838d7f1c"
+    },
+    {
+      "path": "AYRuntime/AYStats/unittest/Test_Inspector.cpp",
+      "sha256": "4ae180714acf7643a0ace4f119472d27716f8c9977cadbeedf88b2b8c42d2e0b"
+    },
+    {
+      "path": "AYRuntime/AYEditor/src/AYEditorSession.cpp",
+      "sha256": "ea620ff060a371abc32165c1b1249ecc412278ab6d2e5dc6c53596d28b8b8af8"
+    },
+    {
+      "path": "AYDocs/sdk/capabilities.stats.json",
+      "sha256": "617e7df90211edce708cad63c35f31fff7adab634baeb1e69eb8b6f36a6f2ad3"
+    },
+    {
+      "path": "AYDocs/sdk/contracts/common.md",
+      "sha256": "14f179806b047a12e4f4b23a7eddb93304247ce8ab5860f6ea35caad38010171"
+    }
+  ]
+}

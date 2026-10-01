@@ -23,14 +23,20 @@ calculations support signed int64. Amounts use integer units, rates use basis po
 
 ## Recipe selection and ownership
 
-Compile `RecipeBook` once from trusted host configuration. Each `Recipe` names its
+Compile `RecipeBook` once from trusted host configuration, or load a versioned
+`.stats-recipes.json` file with `StatsSystem::loadRecipes(path, targetSchema,
+sourceSchema)`. Each `Recipe` names its
 target StatId, AttributeOp, immutable CalculationPlan and ordered RecipeInput bindings.
 Bindings explicitly distinguish Amount/Constant/SourceStat/TargetStat and
 Effective/Base/Current/Capacity. Current and Capacity require a pool. Binding indices
 must match the plan's input count. Recipe names are unique; each target/operation can
 have at most one default. Caps are 4,096 recipes and 64 inputs per recipe.
 
-Install the shared book with `StatsSystem::setRecipes`. An explicit name must exist
+Install the shared book with `StatsSystem::setRecipes`, or let `loadRecipes`
+validate the whole file and replace it atomically. A failed read or validation
+leaves the previous book active. The file records the named recipes, target and
+operation, default flag, ordered input provenance, and inline plan. SourceStat
+bindings require the source schema at load time. An explicit name must exist
 and match the target and operation. An omitted name selects the authored default;
 without a default it uses direct amount. To preserve both behaviors for one operation,
 give the complex recipe an explicit name and leave it non-default, or author a named
@@ -99,7 +105,7 @@ saves runtime checkpoints under the system temporary directory. Optionally pass
 `<assets-directory> <save-directory>` as its two arguments. The example is excluded
 from default builds and is also exercised by `StatsGameplayTests`.
 
-It loads authored definitions/plan JSON, compiles explicit host input bindings,
+It loads authored definitions and a complete recipe-book JSON file,
 applies flat +20, summed +50%, and independent ×1.1 to attack 100. Effective attack
 is 198; a 50% hit yields 99. The shared snapshot lets shield absorb 30 and health
 request 69. With 50 health left, actual health loss is 50 and excess is 19. A 20%
@@ -107,6 +113,9 @@ leech recipe heals 10. Saves/reloads preserve source 50, target 0 and owned buff
 the buff expires after three fixed ticks, returning attack to 100. The example
 checks that pre-restore identities cannot publish late results.
 
-Loose definition/plan JSON is supported. Named RecipeBook bindings remain C++ host
-configuration; a book asset loader, editor recipe picker, ResourceManager/cook/pak
-and dedicated delta network transport are future work.
+Loose definition/plan/recipe-book JSON is supported. The Stats Inspector can
+load a recipe file under the project's Assets directory, optionally load a
+source definitions file, select a named recipe, preview exact inputs, and
+validate/save the complete document. Recipe file saving checks that the
+selection and previous file text still match. ResourceManager/cook/pak
+integration and dedicated delta network transport are future work.

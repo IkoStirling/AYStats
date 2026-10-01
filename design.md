@@ -85,7 +85,11 @@ uses d3dcompiler; cross-platform/offline shader publishing remains future scope.
 AssetIO separates author definitions, runtime checkpoint and network wire state.
 Runtime restore checks schema, ranges, versions and effect handle ownership and
 rebuilds derived caches atomically. JSON bounds include 16 MiB text and depth 32.
-Loose file replacement is atomic; this is not a ResourceManager/cook/pak pipeline.
+Loose author-file replacement is atomic. A separate `.aystats.json` manifest
+references Assets-relative definitions and recipe JSON; ProjectBuild validates
+and hashes this source closure, then emits a self-contained `.aystats` resource.
+AYResource loads cooked recipes from loose files or DB/Pak. The scene stores the
+logical path in a single World-owned StatsRecipeComponent.
 Author field edit and recipe preview are pure. Runtime mode conversion is absent.
 
 Entity integration registers before seal and installs one StatsSystem per World.
@@ -143,9 +147,10 @@ callback cycles. Effect apply/update/remove/expiry and incarnation/replica/detac
 changes propagate even if transport encoding fails. Gameplay callbacks follow
 publication and obey the existing no-reentry/no-destruction contract.
 
-The runnable demo and its authored loose definition/plan assets live under demo/;
-its gameplay policy does not become Core behavior. RecipeBook input binding assets,
-editor selection and resource packaging remain future work. See docs/gameplay.md.
+The runnable demo and its authored loose definition/plan/recipe-book assets live under
+demo/; its gameplay policy does not become Core behavior. The editor can load, select,
+preview and save a validated project-Assets recipe file. The cook/pak resource
+path uses the separate manifest described above. See docs/gameplay.md and docs/recipe-assets.md.
 
 ## Complete CPU settlement workspace
 

@@ -3,6 +3,7 @@ param(
     [string]$BuildDirectory='out/build/stats-core',
     [string]$Configuration='Release',
     [string[]]$Targets=@('AYStats_UnitTests'),
+    [ValidateRange(1,64)][int]$Parallel=4,
     [switch]$Configure,
     [string]$SourceDirectory='AYRuntime/AYStats',
     [string[]]$ExtraConfigureArguments=@()
@@ -24,6 +25,6 @@ try {
         & cmake -S $SourceDirectory -B $BuildDirectory -G Ninja "-DCMAKE_CXX_COMPILER=$statsCompilerRoot/bin/Hostx64/x64/cl.exe" "-DCMAKE_MT=$statsSdkRoot/bin/$statsSdkVersion/x64/mt.exe" "-DCMAKE_RC_COMPILER=$statsSdkRoot/bin/$statsSdkVersion/x64/rc.exe" "-DCMAKE_BUILD_TYPE=$Configuration" "-DCMAKE_PREFIX_PATH=$engineRoot/out/build/vcpkg_installed/x64-windows" @ExtraConfigureArguments
         if($LASTEXITCODE -ne 0){throw 'AYStats configure failed'}
     }
-    & cmake --build $BuildDirectory --target @Targets --parallel 4
+    & cmake --build $BuildDirectory --target @Targets --parallel $Parallel
     if($LASTEXITCODE -ne 0){throw 'AYStats build failed'}
 } finally {Pop-Location}

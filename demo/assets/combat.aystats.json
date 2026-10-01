@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "kind": "stats-recipe-source",
+  "targetDefinitions": "target.stats.json",
+  "sourceDefinitions": "source.stats.json",
+  "recipeBook": "combat.stats-recipes.json"
+}

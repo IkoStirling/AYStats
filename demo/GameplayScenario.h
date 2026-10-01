@@ -35,19 +35,8 @@ inline GameplayReport runGameplayScenario(ayt::entity::World& world,
     auto* actor=source->addComponent<StatsComponent>();auto* victim=target->addComponent<StatsComponent>();
     require(actor->configure(require(decodeDefinitions(require(readText(assets/"source.stats.json"))))));
     require(victim->configure(require(decodeDefinitions(require(readText(assets/"target.stats.json"))))));
-    auto healthPlan=require(decodePlan(require(readText(assets/"shielded-hit.plan.json"))));
-    std::vector<Node> nodes;for(const auto& instruction:healthPlan.instructions())nodes.push_back(instruction.node);
-    auto shieldPlan=require(CalculationPlan::compile(nodes,5,3));
-    auto leechPlan=require(CalculationPlan::compile({{.id=1,.op=Op::Input},{.id=2,.op=Op::Input,.binding=1},
-        {.id=3,.op=Op::MultiplyRate,.a=1,.b=2}},3,2));
-    const std::vector<RecipeInput> hitInputs{{InputSource::SourceStat,statId("attack")},
-        {InputSource::Amount},{InputSource::TargetStat,statId("shield"),InputField::Current}};
-    require(system->setRecipes(require(RecipeBook::compile({
-        {"absorb",statId("shield"),AttributeOp::Decrease,std::move(shieldPlan),hitInputs},
-        {"spill",statId("health"),AttributeOp::Decrease,std::move(healthPlan),hitInputs},
-        {"leech",statId("health"),AttributeOp::Increase,std::move(leechPlan),
-            {{InputSource::Amount},{InputSource::Constant,0,InputField::Effective,2000}}}
-    }))));
+    require(system->loadRecipes(assets/"combat.stats-recipes.json",*victim->state()->schema(),
+                                actor->state()->schema().get()));
     // Flat, summed percentage and independent multiplier have distinct authored zones.
     require(actor->applyEffect({.id=1,.key=1,.expires=system->tick()+3,.modifiers={
         {.handle=1,.rule=1,.target=statId("attack"),.stage=1,.zone=1,.value=20},

@@ -151,3 +151,28 @@ fast-forward changed no source files and left the module working tree clean.
 The compatible AYCombat implementation is `e0ecf9e`; the engine-root catalog,
 build wiring and plan remain separate workspace changes. Neither module has a
 remote, and no push or publish occurred.
+
+## Loose recipe-book loading and authoring — 2026-09-30
+
+The gameplay example now loads one versioned `stats-recipes` asset containing
+the absorb, spill, and leech recipes. The file carries target/operation/default
+metadata, ordered input provenance, and inline plans. A failed read or schema
+validation keeps the installed book; prepared pure plans retain their old
+ownership. The Stats Inspector can load a file under project Assets, resolve an
+optional source definitions file, select and preview a named recipe, and
+validate/save the whole document. Save checks the selected Stats owner and
+original on-disk text before atomic replacement. This is loose-file support,
+not ResourceManager/cook/pak integration or scene-document undo for recipe files.
+
+- [Full AYStats report](recipe-validation/f23c07d7ca5648f185e82af48ff653f5/cases.json): 74 cases across seven partitions passed, including 30 Inspector assertions for source-schema selection and path confinement.
+- [Headless AYStats report](recipe-validation-headless/a179839305284edd985a95c0e1395b7a/cases.json): 70 cases across four partitions passed.
+- [AYCombat consumer report](recipe-validation-combat/9d63bc88d0114406b725b0a9ee6439f3/cases.json): 90 cases across three partitions passed.
+- The runnable gameplay example produced buffed attack 198, shield absorption 30, requested/actual/excess health damage 69/50/19, actual leech 10, and rejected a stale result.
+- Agent SDK doctor checked 63 capabilities, 50 modules, 12 search cases, and 100 documented entry symbols with zero errors and warnings.
+
+[Source fingerprint](recipe-validation-sources.json) identifies the verified
+working-tree implementation and Editor/SDK integration; it is not a release tag.
+
+The full Editor library compiled and the Inspector widget was exercised by
+headless UI tests. A complete manual interactive Editor walkthrough and formal
+asset cook/pak packaging remain outside this validation.

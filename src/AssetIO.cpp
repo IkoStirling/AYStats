@@ -3,6 +3,7 @@
 #include <fstream>
 #include <atomic>
 #include <chrono>
+#include <initializer_list>
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -18,6 +19,54 @@ std::uint32_t u32(const Json& j){auto value=u(j);if(value>UINT32_MAX)throw std::
 void limit(const Json& j,std::size_t max){if(!j.is_array() || j.size()>max)throw std::runtime_error("array limit/type");}
 Json parse(std::string_view text){if(text.size()>16*1024*1024)throw std::runtime_error("document byte limit");return Json::parse(text,[](int depth,Json::parse_event_t,Json&){if(depth>32)throw std::runtime_error("document nesting limit");return true;});}
 void version(const Json& j,const char* kind){if(u(j.at("version"))!=1 || j.at("kind")!=kind)throw std::runtime_error("unsupported version/document kind");}
+void exactKeys(const Json& object,std::initializer_list<std::string_view> keys) {
+    if(!object.is_object() || object.size()!=keys.size())throw std::runtime_error("unexpected or missing document field");
+    for(const auto key:keys)if(!object.contains(std::string(key)))throw std::runtime_error("missing document field");
+}
+const char* nameOf(AttributeOp op) {
+    switch(op){case AttributeOp::Increase:return "increase";case AttributeOp::Decrease:return "decrease";case AttributeOp::Set:return "set";}
+    throw std::runtime_error("unknown recipe operation");
+}
+AttributeOp recipeOperation(const Json& value) {
+    const auto name=value.get<std::string>();
+    if(name=="increase")return AttributeOp::Increase;
+    if(name=="decrease")return AttributeOp::Decrease;
+    if(name=="set")return AttributeOp::Set;
+    throw std::runtime_error("unknown recipe operation");
+}
+const char* nameOf(InputField field) {
+    switch(field){case InputField::Effective:return "effective";case InputField::Base:return "base";
+        case InputField::Current:return "current";case InputField::Capacity:return "capacity";}
+    throw std::runtime_error("unknown recipe input field");
+}
+InputField recipeField(const Json& value) {
+    const auto name=value.get<std::string>();
+    if(name=="effective")return InputField::Effective;
+    if(name=="base")return InputField::Base;
+    if(name=="current")return InputField::Current;
+    if(name=="capacity")return InputField::Capacity;
+    throw std::runtime_error("unknown recipe input field");
+}
+Result<const Definition*> recipeDefinition(const Schema* schema,std::string_view name,
+                                           bool target,InputField field=InputField::Effective) {
+    if(!schema)return fail(Error::Missing,"source schema required by recipe binding");
+    if(name.empty() || name.size()>256)return fail(Error::Invalid,"invalid recipe stat name");
+    const auto index=schema->index(statId(name));
+    if(!index || schema->definitions()[*index].name!=name)return fail(Error::Missing,"recipe stat absent from declared schema");
+    const auto& definition=schema->definitions()[*index];
+    if(target && definition.lifetime!=Lifetime::Persistent)return fail(Error::Invalid,"recipe target must be persistent");
+    if((field==InputField::Current || field==InputField::Capacity) && definition.shape!=Shape::Pool)
+        return fail(Error::Invalid,"recipe current/capacity binding requires pool");
+    return &definition;
+}
+Result<std::string> recipeName(const Schema* schema,StatId id,bool target,InputField field=InputField::Effective) {
+    if(!schema)return fail(Error::Missing,"source schema required by recipe binding");
+    const auto index=schema->index(id);
+    if(!index)return fail(Error::Missing,"recipe stat absent from declared schema");
+    const auto& name=schema->definitions()[*index].name;
+    if(auto checked=recipeDefinition(schema,name,target,field);!checked)return std::unexpected(checked.error());
+    return name;
+}
 std::string ref(const Schema& schema,StatId id){if(!id)return {};return schema.definitions()[schema.index(id).value()].name;}
 Json definitionJson(const Schema& schema) {
     Json array=Json::array();
@@ -67,6 +116,101 @@ Result<CalculationPlan> decodePlan(std::string_view text,Extensions extensions) 
         for(const auto& n:j.at("nodes")){Node node{.id=u32(n.at("id")),.op=enumeration<Op>(n.at("op"),std::uint64_t(Op::Extension)),.a=u32(n.at("a")),.b=u32(n.at("b")),.c=u32(n.at("c")),.binding=u32(n.at("binding")),.value=v(n.at("value"))};limit(n.at("table"),65536);for(const auto& entry:n.at("table"))node.table.push_back(v(entry));node.extension=n.at("extension").get<std::string>();nodes.push_back(std::move(node));}
         return CalculationPlan::compile(std::move(nodes),u32(j.at("output")),u32(j.at("inputs")),std::move(extensions));
     }catch(const std::exception& e){return fail(Error::Invalid,e.what());}
+}
+Result<std::string> encodeRecipeBook(const RecipeBook& book,const Schema& targetSchema,
+                                    const Schema* sourceSchema) {
+    try {
+        Json recipes=Json::array();
+        for(const auto& recipe:book.recipes()) {
+            auto target=recipeName(&targetSchema,recipe.target,true);
+            if(!target)return std::unexpected(target.error());
+            auto plan=encodePlan(recipe.plan);
+            if(!plan)return std::unexpected(plan.error());
+            Json inputs=Json::array();
+            for(const auto& input:recipe.inputs) {
+                switch(input.source) {
+                case InputSource::Amount: inputs.push_back({{"source","amount"}});break;
+                case InputSource::Constant: inputs.push_back({{"source","constant"},{"value",input.constant}});break;
+                case InputSource::SourceStat:
+                case InputSource::TargetStat: {
+                    auto name=recipeName(input.source==InputSource::SourceStat?sourceSchema:&targetSchema,
+                                         input.stat,false,input.field);
+                    if(!name)return std::unexpected(name.error());
+                    inputs.push_back({{"source",input.source==InputSource::SourceStat?"source-stat":"target-stat"},
+                                      {"stat",*name},{"field",nameOf(input.field)}});break;
+                }
+                default:return fail(Error::Invalid,"unknown recipe input source");
+                }
+            }
+            recipes.push_back({{"name",recipe.name},{"target",*target},{"operation",nameOf(recipe.operation)},
+                               {"default",recipe.isDefault},{"inputs",std::move(inputs)},
+                               {"plan",Json::parse(*plan)}});
+        }
+        auto encoded=Json{{"version",1},{"kind","stats-recipes"},{"recipes",std::move(recipes)}}.dump();
+        if(encoded.size()>16*1024*1024)return fail(Error::Limit,"recipe book byte limit");
+        return encoded;
+    }catch(const std::exception& e){return fail(Error::Invalid,e.what());}
+}
+Result<std::shared_ptr<const RecipeBook>> decodeRecipeBook(std::string_view text,
+    const Schema& targetSchema,const Schema* sourceSchema,Extensions extensions) {
+    try {
+        const auto document=parse(text);
+        exactKeys(document,{"version","kind","recipes"});version(document,"stats-recipes");
+        const auto& authored=document.at("recipes");limit(authored,4096);
+        std::vector<Recipe> recipes;recipes.reserve(authored.size());
+        for(std::size_t i=0;i<authored.size();++i) {
+            const auto location="recipes["+std::to_string(i)+"]";
+            try {
+                const auto& json=authored[i];
+                exactKeys(json,{"name","target","operation","default","inputs","plan"});
+                const auto name=json.at("name").get<std::string>();
+                if(name.empty() || name.size()>128)throw std::runtime_error("invalid recipe name");
+                const auto targetName=json.at("target").get<std::string>();
+                auto target=recipeDefinition(&targetSchema,targetName,true);
+                if(!target){auto error=target.error();error.path=location+".target";return std::unexpected(std::move(error));}
+                const auto operation=recipeOperation(json.at("operation"));
+                const auto isDefault=json.at("default").get<bool>();
+                const auto& authoredInputs=json.at("inputs");limit(authoredInputs,64);
+                std::vector<RecipeInput> inputs;inputs.reserve(authoredInputs.size());
+                for(std::size_t b=0;b<authoredInputs.size();++b) {
+                    const auto& input=authoredInputs[b];
+                    const auto source=input.at("source").get<std::string>();
+                    RecipeInput binding;
+                    if(source=="amount")exactKeys(input,{"source"});
+                    else if(source=="constant") {
+                        exactKeys(input,{"source","value"});binding.source=InputSource::Constant;
+                        binding.constant=v(input.at("value"));
+                    }else if(source=="source-stat" || source=="target-stat") {
+                        exactKeys(input,{"source","stat","field"});
+                        binding.source=source=="source-stat"?InputSource::SourceStat:InputSource::TargetStat;
+                        binding.field=recipeField(input.at("field"));
+                        const auto statName=input.at("stat").get<std::string>();
+                        auto definition=recipeDefinition(binding.source==InputSource::SourceStat?sourceSchema:&targetSchema,
+                                                         statName,false,binding.field);
+                        if(!definition){auto error=definition.error();error.path=location+".inputs["+std::to_string(b)+"]";return std::unexpected(std::move(error));}
+                        binding.stat=(*definition)->id;
+                    }else throw std::runtime_error("unknown recipe input source");
+                    inputs.push_back(binding);
+                }
+                // The existing plan decoder owns DAG/extension/operand validation.
+                auto plan=decodePlan(json.at("plan").dump(),extensions);
+                if(!plan){auto error=plan.error();error.path=location+".plan";return std::unexpected(std::move(error));}
+                if(inputs.size()!=plan->inputCount())return std::unexpected(Diagnostic{Error::Invalid,"recipe input/plan shape mismatch",location+".inputs"});
+                recipes.push_back({name,(*target)->id,operation,std::move(*plan),std::move(inputs),isDefault});
+            }catch(const std::exception& e){return std::unexpected(Diagnostic{Error::Invalid,e.what(),location});}
+        }
+        auto book=RecipeBook::compile(std::move(recipes));
+        if(!book){auto error=book.error();if(error.path.empty())error.path="recipes";return std::unexpected(std::move(error));}
+        return book;
+    }catch(const std::exception& e){return fail(Error::Invalid,e.what());}
+}
+Result<std::shared_ptr<const RecipeBook>> loadRecipeBook(const std::filesystem::path& path,
+    const Schema& targetSchema,const Schema* sourceSchema,Extensions extensions) {
+    auto text=readText(path);
+    if(!text){auto error=text.error();if(error.path.empty())error.path=path.generic_string();return std::unexpected(std::move(error));}
+    auto book=decodeRecipeBook(*text,targetSchema,sourceSchema,std::move(extensions));
+    if(!book){auto error=book.error();error.path=path.generic_string()+":"+error.path;return std::unexpected(std::move(error));}
+    return book;
 }
 Result<StatSet> decodeState(std::string_view text,std::shared_ptr<const Schema> expected) {
     try {

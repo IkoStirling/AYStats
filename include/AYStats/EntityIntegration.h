@@ -9,6 +9,7 @@
 #include <deque>
 namespace ayt::entity {class World;class ComponentRegistry;class HealthComponent;}
 namespace ayt::stats {
+struct RecipeAsset;
 inline constexpr std::uint32_t kStatsWire=std::uint32_t(ayt::reflect::FieldAttribute::NetReplicate);
 /// Deferred delivery lets a higher-level transaction finish its own bookkeeping first.
 enum class NotificationDelivery { Immediate, NextTick };
@@ -79,6 +80,22 @@ private:
     friend Result<BatchSettlement> settleEntityBatch(ayt::entity::World&,std::uint64_t,std::span<const ayt::entity::EntityHandle>,std::span<const std::uint64_t>,std::span<const std::uint64_t>,std::span<const SettlementRequest>,BatchSemantics,ayt::task::ITaskScheduler*,SettlementMetrics*);
 };
 #undef AY_CURRENT_CLASS
+#define AY_CURRENT_CLASS StatsRecipeComponent
+/// Scene-owned reference to the World recipe asset. One active owner per World.
+class StatsRecipeComponent final : public ayt::entity::IComponent {
+public:
+    const char* getName() const override {return "StatsRecipes";}
+    AY_PROPERTY(std::string,assetPath,ayt::entity::kAttrSerialize)
+    void onAttach(ayt::entity::Entity* owner) override {_owner=owner;}
+    void onDetach() override;
+    void onStart() override;
+    Result<void> refresh();
+    const std::optional<Diagnostic>& lastError() const noexcept {return _error;}
+private:
+    ayt::entity::Entity* _owner=nullptr;
+    std::optional<Diagnostic> _error;
+};
+#undef AY_CURRENT_CLASS
 /// One World-owned Sim lane system; explicit bind avoids singleton tick ambiguity.
 class StatsSystem final : public ayt::entity::ISystem {
 public:
@@ -92,8 +109,17 @@ public:
     Result<void> observeState(const std::shared_ptr<StateObserver>& observer);
     Result<void> preparePublication(ayt::entity::EntityHandle, const StatsComponent&, const Schema&, PublicationReason, std::size_t publications=1);
     void publish(ayt::entity::EntityHandle, const StatsComponent&, PublicationReason) noexcept;
-    /// Immutable World-level recipe configuration. Replacing it is forbidden during publication.
+    /// Immutable World-level recipe configuration. An active StatsRecipeComponent owns
+    /// replacement until it releases its asset; manual replacement is rejected meanwhile.
     Result<void> setRecipes(std::shared_ptr<const RecipeBook> recipes);
+    /// Load/validate a complete loose recipe asset before replacing the active book.
+    /// Invalid or missing files keep the previous book and all live states intact.
+    Result<void> loadRecipes(const std::filesystem::path& path,const Schema& targetSchema,
+                             const Schema* sourceSchema=nullptr,Extensions extensions={});
+    /// Resolve a cooked .aystats asset through AYResource (loose or DB/Pak).
+    /// Replacement is atomic and rejected during publication/calculation.
+    Result<void> bindRecipeAsset(ayt::entity::EntityHandle owner,std::string_view path);
+    void releaseRecipeAsset(ayt::entity::EntityHandle owner);
     struct PreparedCalculation {
         std::shared_ptr<const RecipeBook> owner;
         /// Owns the direct plan or aliases the immutable book; survives recipe/World replacement.
@@ -141,6 +167,9 @@ private:
     bool _publishing=false,_changing=false;
     std::vector<std::weak_ptr<StateObserver>> _observers;
     std::shared_ptr<const RecipeBook> _recipes;
+    ayt::entity::EntityHandle _recipeOwner;
+    std::string _recipeAssetPath;
+    std::weak_ptr<const RecipeAsset> _recipeSnapshot;
     std::shared_ptr<const CalculationPlan> _direct;
 };
 /// Install for each newly created World; does not create a second Host tick authority.

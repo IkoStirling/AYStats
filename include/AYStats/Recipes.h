@@ -26,6 +26,8 @@ class RecipeBook {
 public:
     static Result<std::shared_ptr<const RecipeBook>> compile(std::vector<Recipe> recipes);
     Result<const Recipe*> select(StatId target, AttributeOp operation, std::string_view explicitName = {}) const;
+    /// Read-only author order, used by versioned asset serialization and inspectors.
+    std::span<const Recipe> recipes() const noexcept { return _recipes; }
 private:
     std::vector<Recipe> _recipes;
     std::vector<std::size_t> _names,_defaults;

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-ninja"
+	tests="4"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname="LAPTOP-KQNPDH3L"
+	time="0"
+	timestamp="2026-09-30T11:45:16"
+	>
+	<testcase name="AYStats_EntityTests" classname="AYStats_EntityTests" time="0.179373" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 5 suites, 23 cases
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Destroyed entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[World] Created entity 3
+[World] Created entity 4
+[World] Shutdown
+[World] Initialized
+[World] Created entity 1
+[World] Created entity 2
+[Wo...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="AYStats_UnitTests" classname="AYStats_UnitTests" time="0.22371" status="run">
+		<properties>
+			<property name="cmake_labels" value="fast;stats;stats-fast;stats-full"/>
+		</properties>
+		<system-out>
+[AYStats] 7 suites, 39 cases
+
+Test Summary [AYStats]
+   Cases: 39 (passed 39, failed 0, skipped 0), selected 39
+   Suites: 7
+   Assertions: 17444 (passed 17444, failed 0)
+   Time: 158.604 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  13.095 ms  StatsBatchTests.randomized_multi_write_settlement_matches_public_transaction_reference
+  8.130 ms  StatsBatchTests.owned_parallel_results_match_scalar_and_block_sizes
+  7.742 ms  StatsBatchTests.named_recipe_bank_is_owned_declared_and_parallel_matches_reference
+  5.989 ms  StatsBatchTests.scheduler_rejection_and_exception_drain_accepted_work_without_publication
+  4.824 ms  StatsEffectTests.independent_stacks_and_atomic_limits
+</system-out>
+	</testcase>
+	<testcase name="AYStats_UnitTests.integration" classname="AYStats_UnitTests.integration" time="0.094571" status="run">
+		<properties>
+			<property name="cmake_labels" value="integration;stats;stats-full;stats-integration"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 7 cases
+
+Test Summary [AYStats]
+   Cases: 7 (passed 7, failed 0, skipped 0), selected 7
+   Suites: 1
+   Assertions: 44 (passed 44, failed 0)
+   Time: 47.181 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  21.002 ms  StatsAssetTests.atomic_file_write_and_failed_read_leave_owner_unchanged
+  5.310 ms  StatsAssetTests.definitions_and_runtime_roundtrip_keep_zero_health
+  5.279 ms  StatsAssetTests.plan_roundtrip_keeps_stage_ids
+  4.276 ms  StatsAssetTests.recipe_book_document_rejects_bad_contract_without_fallback
+  4.186 ms  StatsAssetTests.timed_effect_checkpoint_preserves_expiry_and_random_domain
+</system-out>
+	</testcase>
+	<testcase name="AYStats_StressTests" classname="AYStats_StressTests" time="0.125146" status="run">
+		<properties>
+			<property name="cmake_labels" value="stats;stats-full;stats-stress;stress"/>
+		</properties>
+		<system-out>
+[AYStats] 1 suites, 1 cases
+
+Test Summary [AYStats]
+   Cases: 1 (passed 1, failed 0, skipped 0), selected 1
+   Suites: 1
+   Assertions: 264 (passed 264, failed 0)
+   Time: 79.092 ms
+
+   [ALL TESTS PASSED]
+Slowest cases:
+  79.089 ms  StatsStressTests.heterogeneous_random_table_and_complex_plans_match_across_workers
+</system-out>
+	</testcase>
+</testsuite>

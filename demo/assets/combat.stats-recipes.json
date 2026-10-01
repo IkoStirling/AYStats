@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "kind": "stats-recipes",
+  "recipes": [
+    {
+      "name": "absorb",
+      "target": "shield",
+      "operation": "decrease",
+      "default": false,
+      "inputs": [
+        {
+          "field": "effective",
+          "source": "source-stat",
+          "stat": "attack"
+        },
+        {
+          "source": "amount"
+        },
+        {
+          "field": "current",
+          "source": "target-stat",
+          "stat": "shield"
+        }
+      ],
+      "plan": {
+        "version": 1,
+        "kind": "stats-plan",
+        "inputs": 3,
+        "output": 5,
+        "nodes": [
+          {
+            "id": 1,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 2,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 1,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 3,
+            "op": 6,
+            "a": 1,
+            "b": 2,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 4,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 2,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 5,
+            "op": 7,
+            "a": 3,
+            "b": 4,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 6,
+            "op": 3,
+            "a": 3,
+            "b": 5,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "spill",
+      "target": "health",
+      "operation": "decrease",
+      "default": false,
+      "inputs": [
+        {
+          "field": "effective",
+          "source": "source-stat",
+          "stat": "attack"
+        },
+        {
+          "source": "amount"
+        },
+        {
+          "field": "current",
+          "source": "target-stat",
+          "stat": "shield"
+        }
+      ],
+      "plan": {
+        "version": 1,
+        "kind": "stats-plan",
+        "inputs": 3,
+        "output": 6,
+        "nodes": [
+          {
+            "id": 1,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 2,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 1,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 3,
+            "op": 6,
+            "a": 1,
+            "b": 2,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 4,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 2,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 5,
+            "op": 7,
+            "a": 3,
+            "b": 4,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 6,
+            "op": 3,
+            "a": 3,
+            "b": 5,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "leech",
+      "target": "health",
+      "operation": "increase",
+      "default": false,
+      "inputs": [
+        {
+          "source": "amount"
+        },
+        {
+          "source": "constant",
+          "value": 2000
+        }
+      ],
+      "plan": {
+        "version": 1,
+        "kind": "stats-plan",
+        "inputs": 2,
+        "output": 3,
+        "nodes": [
+          {
+            "id": 1,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 2,
+            "op": 0,
+            "a": 0,
+            "b": 0,
+            "c": 0,
+            "binding": 1,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          },
+          {
+            "id": 3,
+            "op": 6,
+            "a": 1,
+            "b": 2,
+            "c": 0,
+            "binding": 0,
+            "value": 0,
+            "table": [],
+            "extension": ""
+          }
+        ]
+      }
+    }
+  ]
+}

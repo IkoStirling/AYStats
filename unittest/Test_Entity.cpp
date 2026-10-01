@@ -1,9 +1,13 @@
 #include <AYTest.h>
 #include <AYStats/EntityIntegration.h>
+#include <AYStats/RecipeAsset.h>
+#include <AYResource/AssetPath.h>
+#include <AYResource/ResourceManager.h>
 #include <AYEntity.h>
 #include <AYEntity/EntityModule.h>
 #include <AYEntity/SceneSerializer.h>
 #include <array>
+#include <fstream>
 using namespace ayt::stats;
 namespace {
 struct WorldFixture {
@@ -14,6 +18,59 @@ struct WorldFixture {
 };
 }
 TEST_SUITE(StatsEntityTests)
+TEST_CASE(scene_recipe_reference_loads_and_preserves_last_valid_book) {
+    WorldFixture f;
+    const auto examples=std::filesystem::path(AY_STATS_EXAMPLE_ASSETS);
+    auto source=inspectRecipeAssetSource(examples/"combat.aystats.json",examples);
+    CHECK_TRUE(source.has_value());
+    auto cooked=encodeRecipeAsset(source->asset);
+    CHECK_TRUE(cooked.has_value());
+    const auto path=ayt::test::testTmpPath("scene-recipe.aystats");
+    {std::ofstream stream(path,std::ios::binary);stream<<*cooked;}
+    ayt::resource::setAssetRoot(std::filesystem::path(path).parent_path().string());
+    auto* owner=f.world.createEntity();owner->setName("RecipeOwner");
+    auto* reference=owner->addComponent<StatsRecipeComponent>();
+    reference->assetPath=std::filesystem::path(path).filename().string();
+    owner->onStart();CHECK_FALSE(reference->lastError().has_value());
+    auto* target=f.world.createEntity();auto* targetStats=target->addComponent<StatsComponent>();
+    CHECK_TRUE(targetStats->configure(source->asset.targetSchema).has_value());
+    auto* attacker=f.world.createEntity();auto* sourceStats=attacker->addComponent<StatsComponent>();
+    CHECK_TRUE(sourceStats->configure(source->asset.sourceSchema).has_value());
+    auto* system=dynamic_cast<StatsSystem*>(f.world.findSystemByName("StatsSystem"));
+    auto targetHandle=f.world.getEntityHandle(target->getId());
+    auto sourceHandle=f.world.getEntityHandle(attacker->getId());
+    CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    auto empty=source->asset;
+    empty.book=RecipeBook::compile({}).value();
+    CHECK_FALSE(system->setRecipes(empty.book).has_value());
+    CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    f.world.fixedUpdate(.016f);
+    CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    {std::ofstream stream(path,std::ios::binary);stream<<encodeRecipeAsset(empty).value();}
+    const auto resolved=ayt::resource::resolveAssetPath({},reference->assetPath);
+    ayt::resource::ResourceManager::instance().reloadResource(resolved);
+    f.world.fixedUpdate(.016f);
+    CHECK_FALSE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    {std::ofstream stream(path,std::ios::binary);stream<<*cooked;}
+    ayt::resource::ResourceManager::instance().reloadResource(resolved);
+    f.world.fixedUpdate(.016f);
+    CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    const auto scene=ayt::test::testTmpPath("scene-with-recipes.ayscene");
+    CHECK_TRUE(ayt::entity::saveScene(f.world,scene));
+    reference->assetPath="missing.aystats";
+    CHECK_FALSE(reference->refresh().has_value());
+    CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    f.world.destroyEntity(owner);
+    CHECK_TRUE(system->setRecipes(empty.book).has_value());
+    CHECK_FALSE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
+    ayt::serializer::SerializeError error;
+    CHECK_TRUE(ayt::entity::loadScene(f.world,scene,&error));
+    auto* restored=f.world.findEntity("RecipeOwner");CHECK_NOT_NULL(restored);
+    auto* restoredRef=restored->getComponent<StatsRecipeComponent>();CHECK_NOT_NULL(restoredRef);
+    CHECK_TRUE(restoredRef->assetPath==std::filesystem::path(path).filename().string());
+    restored->onStart();CHECK_FALSE(restoredRef->lastError().has_value());
+    ayt::resource::setAssetRoot({});
+}
 TEST_CASE(zero_current_fixed_tick_and_checkpoint_restore) {
     WorldFixture f;auto* stats=f.make();CHECK_TRUE(stats->read(statId("health"))->current==0);f.world.fixedUpdate(1.0f/60);CHECK_TRUE(stats->read(statId("health"))->current==0);
     const auto saved=stats->checkpoint().value();CHECK_TRUE(stats->commit(std::array{Mutation{statId("health"),MutationOp::Increase,20}},stats->version()).has_value());

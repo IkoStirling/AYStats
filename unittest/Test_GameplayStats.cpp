@@ -1,4 +1,5 @@
 #include <AYTest.h>
+#include <AYTestFixtures.h>
 #include <AYStats/EntityIntegration.h>
 #include <AYEntity.h>
 #include <AYEntity/EntityModule.h>
@@ -57,6 +58,31 @@ struct Observer final:StateObserver {
 };
 }
 TEST_SUITE(StatsGameplayTests)
+TEST_CASE(loading_bad_or_missing_recipe_asset_preserves_the_active_book) {
+    GameplayFixture f;auto [handle,stats]=f.make();
+    const auto path=ayt::test::testTmpPath("stats-recipe-reload.stats-recipes.json");
+    const auto makeBook=[&](Value value){
+        auto plan=demo::require(CalculationPlan::compile({{.id=1,.op=Op::Constant,.value=value}},1,0));
+        return demo::require(RecipeBook::compile({{"fixed",statId("health"),AttributeOp::Decrease,
+            std::move(plan),{},true}}));
+    };
+    const auto original=demo::require(encodeRecipeBook(*makeBook(7),*stats->state()->schema()));
+    demo::require(writeTextAtomic(path,original));
+    demo::require(f.system->loadRecipes(path,*stats->state()->schema()));
+    auto prepared=demo::require(f.system->prepareCalculation(handle,statId("health"),AttributeOp::Decrease,100));
+    CHECK_TRUE(f.system->decrease(handle,"health",100)->changes[0].actual==-7);
+    demo::require(writeTextAtomic(path,"{\"version\":2,\"kind\":\"stats-recipes\",\"recipes\":[]}"));
+    CHECK_TRUE(f.system->loadRecipes(path,*stats->state()->schema()).error().code==Error::Invalid);
+    CHECK_TRUE(f.system->decrease(handle,"health",100)->changes[0].actual==-7);
+    std::error_code ignored;std::filesystem::remove(path,ignored);
+    CHECK_FALSE(f.system->loadRecipes(path,*stats->state()->schema()).has_value());
+    CHECK_TRUE(f.system->decrease(handle,"health",100)->changes[0].actual==-7);
+    demo::require(writeTextAtomic(path,demo::require(encodeRecipeBook(*makeBook(3),*stats->state()->schema()))));
+    demo::require(f.system->loadRecipes(path,*stats->state()->schema()));
+    CHECK_TRUE(f.system->decrease(handle,"health",100)->changes[0].actual==-3);
+    std::vector<Value> scratch(prepared.plan->instructions().size());
+    CHECK_TRUE(prepared.plan->evaluate(prepared.inputs,prepared.context,scratch).value()==7);
+}
 TEST_CASE(entity_batch_profiling_preserves_observer_and_callback_publication_order) {
     GameplayFixture f;auto [a,first]=f.make();auto [b,second]=f.make();
     const auto observer=std::make_shared<Observer>();demo::require(f.system->observeState(observer));

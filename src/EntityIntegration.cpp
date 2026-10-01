@@ -2,17 +2,42 @@
 #include <AYEntity.h>
 #include <AYEntity/ComponentRegistration.h>
 #include <AYEntity/EntityRuntimeModule.h>
+#if defined(AY_STATS_HAS_RESOURCES)
+#include <AYStats/RecipeResource.h>
+#include <AYResource/ResourceManager.h>
+#include <AYResource/AssetPath.h>
+#endif
 #include <atomic>
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <unordered_map>
 namespace ayt::stats {
 AY_FINALIZE_REGISTRATION_METADATA(StatsComponent)
+AY_FINALIZE_REGISTRATION_METADATA(StatsRecipeComponent)
 namespace {
 std::atomic_uint64_t identities=0;
 auto fail(Error e,std::string m){return std::unexpected(Diagnostic{e,std::move(m),{}});}
 }
 StatsComponent::StatsComponent():_generation(++identities){}
+void StatsRecipeComponent::onDetach() {
+    if(_owner)if(auto* world=_owner->getWorld())
+        if(auto* system=dynamic_cast<StatsSystem*>(world->findSystemByName("StatsSystem")))
+            system->releaseRecipeAsset(world->getEntityHandle(_owner->getId()));
+    _owner=nullptr;
+}
+void StatsRecipeComponent::onStart() {if(auto result=refresh();!result)_error=result.error();}
+Result<void> StatsRecipeComponent::refresh() {
+    if(!_owner || !_owner->getWorld())return fail(Error::Missing,"Stats recipe owner has no World");
+    auto& world=*_owner->getWorld();
+    auto* system=dynamic_cast<StatsSystem*>(world.findSystemByName("StatsSystem"));
+    if(!system)return fail(Error::Missing,"StatsSystem is unavailable");
+    auto handle=world.getEntityHandle(_owner->getId());
+    if(assetPath.empty()) {system->releaseRecipeAsset(handle);_error.reset();return {};}
+    auto result=system->bindRecipeAsset(handle,assetPath);
+    if(!result)_error=result.error();else _error.reset();
+    return result;
+}
 void StatsComponent::onAttach(ayt::entity::Entity* owner){_owner=owner;_generation=++identities;}
 void StatsComponent::onDetach(){publish(PublicationReason::Detach);_owner=nullptr;}
 void StatsComponent::onStart(){if(auto r=synchronize();!r)_error=r.error();}
@@ -157,7 +182,43 @@ void StatsSystem::publish(ayt::entity::EntityHandle entity,const StatsComponent&
 }
 Result<void> StatsSystem::setRecipes(std::shared_ptr<const RecipeBook> recipes) {
     if(_publishing || _changing)return fail(Error::Reentrant,"recipe replacement during calculation/publication");
+    if(_recipeOwner.isValid())return fail(Error::Invalid,"World recipe asset owner controls the active book");
     _recipes=std::move(recipes);return {};
+}
+Result<void> StatsSystem::loadRecipes(const std::filesystem::path& path,const Schema& targetSchema,
+                                     const Schema* sourceSchema,Extensions extensions) {
+    if(_publishing || _changing)return fail(Error::Reentrant,"recipe replacement during calculation/publication");
+    auto loaded=loadRecipeBook(path,targetSchema,sourceSchema,std::move(extensions));
+    if(!loaded)return std::unexpected(loaded.error());
+    return setRecipes(std::move(*loaded));
+}
+Result<void> StatsSystem::bindRecipeAsset(ayt::entity::EntityHandle owner,std::string_view path) {
+    if(_publishing || _changing)return fail(Error::Reentrant,"recipe replacement during calculation/publication");
+    if(!owner.isValid())return fail(Error::Invalid,"invalid recipe owner");
+    if(_recipeOwner.isValid() && _recipeOwner!=owner)return fail(Error::Invalid,"World already has a recipe asset owner");
+    const std::filesystem::path logical{std::string(path)};
+    if(path.empty() || !std::string(path).ends_with(".aystats") || logical.has_root_path() ||
+       logical.has_root_name() || path.find(':')!=std::string_view::npos ||
+       std::ranges::any_of(logical,[](const auto& part){return part=="..";}))
+        return fail(Error::Invalid,"recipe asset path must be Assets-relative .aystats");
+#if defined(AY_STATS_HAS_RESOURCES)
+    registerRecipeResourceLoader();
+    const auto resolved=resource::resolveAssetPath("",std::string(path));
+    auto& manager=resource::ResourceManager::instance();
+    auto loaded=manager.load<RecipeResource>(resolved);
+    if(!loaded || manager.hasLoadFailed(resolved) || !loaded->asset())
+        return fail(Error::Missing,"Stats recipe asset could not be loaded: "+std::string(path));
+    auto snapshot=loaded->asset();
+    if(_recipeOwner==owner && _recipeAssetPath==path && _recipeSnapshot.lock()==snapshot)return {};
+    _recipes=snapshot->book;
+    _recipeOwner=owner;_recipeAssetPath=path;_recipeSnapshot=snapshot;return {};
+#else
+    (void)path;return fail(Error::Missing,"AYResource integration is unavailable");
+#endif
+}
+void StatsSystem::releaseRecipeAsset(ayt::entity::EntityHandle owner) {
+    if(_recipeOwner!=owner || _publishing || _changing)return;
+    _recipeOwner={};_recipeAssetPath.clear();_recipeSnapshot.reset();_recipes.reset();
 }
 Result<StatsSystem::PreparedCalculation> StatsSystem::prepareCalculation(ayt::entity::EntityHandle target,StatId stat,
     AttributeOp operation,Value amount,std::string_view recipe,std::optional<ayt::entity::EntityHandle> source) {
@@ -243,6 +304,7 @@ Result<BatchSettlement> StatsSystem::changeBatch(std::span<const AttributeAction
 }
 void StatsSystem::onUpdate(float) {
     if(!_world)return;const auto entities=_world->getAllEntities();
+    for(auto* entity:entities)if(auto* component=entity->getComponent<StatsRecipeComponent>())(void)component->refresh();
     for(auto* entity:entities)if(auto* component=entity->getComponent<StatsComponent>())_tick=std::max(_tick,component->_effects.tick());
     if(_tick==UINT64_MAX)return;++_tick;
     for(auto* entity:entities)if(auto* component=entity->getComponent<StatsComponent>()){if(auto result=component->advance(_tick);!result)component->_error=result.error();}
@@ -253,7 +315,9 @@ Result<void> registerStatsSystem(ayt::entity::World& world) {
 }
 Result<void> registerStatsComponent(ayt::entity::ComponentRegistry& registry) {
     auto result=ayt::entity::registerSceneComponent<StatsComponent>(registry,"StatsComponent","Stats","Gameplay");
-    if(!result)return fail(Error::Invalid,result.message());return {};
+    if(!result)return fail(Error::Invalid,result.message());
+    auto recipes=ayt::entity::registerSceneComponent<StatsRecipeComponent>(registry,"StatsRecipeComponent","Stats Recipes","Gameplay");
+    if(!recipes)return fail(Error::Invalid,recipes.message());return {};
 }
 StatsIntegrationModule::StatsIntegrationModule():_descriptor{.id="AYStats.Integration",.displayName="Stats",.version="0.1.0",.dependencies={ayt::module::ModuleDependency::required(std::string(ayt::entity::kEntityRuntimeModuleId))}}{}
 ayt::module::ModuleResult StatsIntegrationModule::registerTypes(ayt::module::IModuleContext& context) {
