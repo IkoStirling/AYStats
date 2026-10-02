@@ -68,7 +68,7 @@ cmake --build out/build/stats-core --target AYStats_UnitTests AYStats_StressTest
 pwsh -NoProfile -File scripts/tests/run-module-tests.ps1 -Module AYStats -Tier full -BuildDirectory out/build/stats-core -SkipBuild -Audit
 ```
 
-Assets 需要可发现的 nlohmann_json package。本机便利脚本 [build-local.ps1](tools/build-local.ps1) 定位 VS/Windows SDK；其他机器建议直接配置 toolchain。纯 Core 关闭 BUILD_TESTING、Batch、Assets、Gpu，仅构建 AYStatsCore。
+Assets 需要可发现的 nlohmann_json package，并链接 AYAssetFormat；独立构建从引擎源码树的 `AYFoundation/AYAssetFormat` 接入该依赖，根工程则复用已有 target。本机便利脚本 [build-local.ps1](tools/build-local.ps1) 定位 VS/Windows SDK；其他机器建议直接配置 toolchain。纯 Core 关闭 BUILD_TESTING、Batch、Assets、Gpu，仅构建 AYStatsCore。
 
 测试层级为 fast、integration、stress、full 与独立 gpu；GPU 不进入 CPU-only full。AYTest 支持 --list、过滤与 case reports；运行器按实际 features 审计用例。性能 benchmark targets 为 EXCLUDE_FROM_ALL；测量方法和原始数据见 [performance.md](docs/performance.md)。
 

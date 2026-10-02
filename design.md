@@ -1,5 +1,9 @@
 # AYStats v0.1 contracts
 
+Assets uses the Foundation AYAssetFormat registry for canonical suffixes. Its
+standalone build adds the sibling Foundation target only when the parent has not
+already provided it; Core-only builds acquire neither AssetFormat nor JSON.
+
 2026-09-29. Execution: root `AYDocs/AYSTATS-IMPLEMENTATION-PLAN.md`.
 
 Actor/Scene deserialization may precede the first Sim tick. `StatsComponent::ensureReady` applies authored definitions at the first gameplay binding and is idempotent for unchanged definitions; it does not reset already active values or effects. Invalid definitions leave the previous live state intact and return a diagnostic.
