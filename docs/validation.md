@@ -2,7 +2,7 @@
 
 ## Local source and ownership
 
-AYStats is an independent repository on `main` with no remote. Root integration is opt-in (`AY_ENABLE_STATS`, default OFF). Root SDK/CMake/test runner and AYEditor integration changes remain in their own existing working trees; they are not folded into this module's repository. Other pre-existing changes were retained.
+At the time of this validation, AYStats was an independent repository on `main` with no remote. Root integration is opt-in (`AY_ENABLE_STATS`, default OFF). Root SDK/CMake/test runner and AYEditor integration changes remain in their own existing working trees; they are not folded into this module's repository. Other pre-existing changes were retained.
 
 ## Successful configurations
 

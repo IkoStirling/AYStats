@@ -1,6 +1,6 @@
 # AYStats 0.1
 
-独立本地 Git 仓库，分支 `main`，无远端。实验性首版；根工程 `AY_ENABLE_STATS=ON` 启用，默认 OFF。
+独立 Git 仓库，分支 `main`，已登记为根仓 submodule。实验性首版；根工程 `AY_ENABLE_STATS=ON` 启用，默认 OFF。
 
 每个数值分别选择基础/高级、单值/资源池、持久/中间三个维度。Core 使用 C++23 标准库，不依赖 World、Renderer、UI、脚本、网络或设备。
 
