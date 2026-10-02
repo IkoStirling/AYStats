@@ -42,6 +42,8 @@ if (!result) throw std::runtime_error(result.error().message);
 
 Actor 或 Scene 刚完成组件反序列化、尚未运行第一个 Sim tick 时，`StatsComponent::ensureReady()` 可将已配置的 `definitionsJson` 建为运行状态。Combat 的实体绑定会自动调用它；定义未变时重复调用会保留当前数值和效果。
 
+针对临时容量效果结束时需要精确恢复 current 的玩法，`removeEffectRestoringCurrent` 会在未发布副本上移除一个效果并设置指定资源池 current，按移除后的容量裁剪后一次发布。恢复快照或保留期间变化属于上层内容策略，Stats 只执行被选定的数值操作。
+
 可构建 `AYStats_GameplayExample`（根工程、Entity 接入存在、非默认构建目标）。它读取 [demo/assets](demo/assets) 中的定义与完整配方书，演示增益→护盾/血量→实际吸血→保存恢复→到期移除，并由实体测试实际运行。`StatsSystem::loadRecipes` 校验后整体替换配方，失败时保留原配方；Stats Inspector 支持从项目 Assets 选文件、选择命名配方、预览和校验保存。格式与限制见 [recipe-assets.md](docs/recipe-assets.md)。
 
 ## 目标与接入

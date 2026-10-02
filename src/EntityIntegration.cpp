@@ -95,6 +95,26 @@ Result<void> StatsComponent::removeEffect(std::uint64_t instance) {
     if(auto ready=preparePublication(*_state->schema(),PublicationReason::Effects);!ready)return ready;
     auto result=_effects.remove(*_state,instance);if(result)publish(PublicationReason::Effects);return result;
 }
+Result<void> StatsComponent::removeEffectRestoringCurrent(std::uint64_t instance,
+        StatId resource,Value current) {
+    if(_notifying)return fail(Error::Reentrant,"effect removal during notification");
+    if(!_authority || !_state)return fail(Error::Invalid,"effect removal requires configured authority");
+    if(current<0)return fail(Error::Invalid,"restored current must be non-negative");
+    auto nextState=*_state;
+    auto nextEffects=_effects;
+    if(auto result=nextEffects.remove(nextState,instance);!result)return result;
+    auto row=nextState.read(resource);if(!row)return std::unexpected(row.error());
+    const std::array mutation{Mutation{resource,MutationOp::SetCurrent,
+        std::min(current,row->capacity)}};
+    if(auto result=nextState.commit(mutation,nextState.version());!result)
+        return std::unexpected(result.error());
+    if(auto ready=preparePublication(*nextState.schema(),PublicationReason::Effects);!ready)
+        return ready;
+    _state=std::move(nextState);
+    _effects=std::move(nextEffects);
+    publish(PublicationReason::Effects);
+    return {};
+}
 Result<std::string> StatsComponent::checkpoint() const {
     if(!_state)return fail(Error::Invalid,"Stats not configured");return encodeCheckpoint({*_state,_effects,_context});
 }

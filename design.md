@@ -8,6 +8,8 @@ already provided it; Core-only builds acquire neither AssetFormat nor JSON.
 
 Actor/Scene deserialization may precede the first Sim tick. `StatsComponent::ensureReady` applies authored definitions at the first gameplay binding and is idempotent for unchanged definitions; it does not reset already active values or effects. Invalid definitions leave the previous live state intact and return a diagnostic.
 
+`removeEffectRestoringCurrent` stages EffectManager removal and SetCurrent on an unpublished StatSet copy. It clamps the requested current to the final capacity, validates both steps and the publication observer, then publishes one state. Failure leaves the prior effect and current intact. The caller chooses the restoration policy; Stats does not infer gameplay intent from the modifier.
+
 ## Numeric profile
 
 Signed 64-bit integer amounts; rates/factors use 10000 units per 1.0. Each

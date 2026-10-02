@@ -18,6 +18,25 @@ struct WorldFixture {
 };
 }
 TEST_SUITE(StatsEntityTests)
+TEST_CASE(effect_removal_and_current_restore_publish_as_one_state) {
+    WorldFixture f;auto* stats=f.make();
+    auto schema=Schema::compile({
+        {.name="cap",.mode=Mode::Advanced,.initial=100,.zones={{1,ZoneOp::Flat}}},
+        {.name="health",.shape=Shape::Pool,.mode=Mode::Advanced,.current=75,
+            .capacity=100,.capacityFrom=statId("cap")}}).value();
+    CHECK_TRUE(stats->configure(schema).has_value());
+    Effect effect{91,91,UINT64_MAX,1,
+        {{.handle=91,.rule=1,.target=statId("cap"),.zone=1,.value=-99}}};
+    CHECK_TRUE(stats->applyEffect(effect,EffectPolicy::Independent,0).has_value());
+    CHECK_INT_EQ(stats->read(statId("health"))->current,1);
+    const auto version=stats->version();
+    CHECK_FALSE(stats->removeEffectRestoringCurrent(91,statId("missing"),75).has_value());
+    CHECK_INT_EQ(stats->version(),version);
+    CHECK_INT_EQ(stats->read(statId("health"))->capacity,1);
+    CHECK_TRUE(stats->removeEffectRestoringCurrent(91,statId("health"),75).has_value());
+    CHECK_INT_EQ(stats->read(statId("health"))->capacity,100);
+    CHECK_INT_EQ(stats->read(statId("health"))->current,75);
+}
 TEST_CASE(scene_recipe_reference_loads_and_preserves_last_valid_book) {
     WorldFixture f;
     const auto examples=std::filesystem::path(AY_STATS_EXAMPLE_ASSETS);

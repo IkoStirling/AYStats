@@ -49,6 +49,9 @@ public:
     Result<void> applyEffect(Effect effect,EffectPolicy policy,std::uint64_t tick);
     /// Remove this manager's contribution atomically, then publish internal state before returning.
     Result<void> removeEffect(std::uint64_t instance);
+    /// Atomically remove one modifier instance and restore a pool current value.
+    /// The requested value is clamped to the capacity after modifier removal.
+    Result<void> removeEffectRestoringCurrent(std::uint64_t instance,StatId resource,Value current);
     /// Update one owned instance, including its modifiers, without removing other same-key sources.
     Result<void> updateEffect(Effect effect, std::uint64_t tick);
     /// Explicit ownership decision by Host; clients cannot commit or apply local effects.
