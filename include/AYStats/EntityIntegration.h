@@ -34,6 +34,9 @@ public:
     void onAttach(ayt::entity::Entity*) override;
     void onDetach() override;
     void onStart() override;
+    /// Bring authored scene definitions into the live state before the first Sim tick.
+    /// Repeated calls with unchanged definitions preserve current values and effects.
+    Result<void> ensureReady();
     /// Replace authored definitions atomically; invalid data leaves current state intact.
     Result<void> configure(std::shared_ptr<const Schema> schema);
     Result<Row> read(StatId id) const;

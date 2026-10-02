@@ -42,6 +42,7 @@ Result<void> StatsRecipeComponent::refresh() {
 void StatsComponent::onAttach(ayt::entity::Entity* owner){_owner=owner;_generation=++identities;}
 void StatsComponent::onDetach(){publish(PublicationReason::Detach);_owner=nullptr;}
 void StatsComponent::onStart(){if(auto r=synchronize();!r)_error=r.error();}
+Result<void> StatsComponent::ensureReady(){auto result=synchronize();if(!result)_error=result.error();return result;}
 Result<void> StatsComponent::configure(std::shared_ptr<const Schema> schema) {
     if(_notifying)return fail(Error::Reentrant,"configure during settlement notification");
     if(!schema)return fail(Error::Invalid,"null Stats schema");

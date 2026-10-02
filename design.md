@@ -2,6 +2,8 @@
 
 2026-09-29. Execution: root `AYDocs/AYSTATS-IMPLEMENTATION-PLAN.md`.
 
+Actor/Scene deserialization may precede the first Sim tick. `StatsComponent::ensureReady` applies authored definitions at the first gameplay binding and is idempotent for unchanged definitions; it does not reset already active values or effects. Invalid definitions leave the previous live state intact and return a diagnostic.
+
 ## Numeric profile
 
 Signed 64-bit integer amounts; rates/factors use 10000 units per 1.0. Each

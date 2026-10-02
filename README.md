@@ -40,6 +40,8 @@ if (!result) throw std::runtime_error(result.error().message);
 
 游戏逻辑通常通过当前 World 的 `StatsSystem` 调用 `decrease(handle,"health",30)`、`increase(handle,"power",5)` 或 `set`。池操作改变 current，单值改变 base；可选配方名及来源 handle 接入复杂公式。`changeBatch` 默认 Ordered，显式 Snapshot 用于需要共享批前取值的计算；名字错误/操作不兼容不会回退。实际玩法接入与重放边界见 [gameplay.md](docs/gameplay.md)。
 
+Actor 或 Scene 刚完成组件反序列化、尚未运行第一个 Sim tick 时，`StatsComponent::ensureReady()` 可将已配置的 `definitionsJson` 建为运行状态。Combat 的实体绑定会自动调用它；定义未变时重复调用会保留当前数值和效果。
+
 可构建 `AYStats_GameplayExample`（根工程、Entity 接入存在、非默认构建目标）。它读取 [demo/assets](demo/assets) 中的定义与完整配方书，演示增益→护盾/血量→实际吸血→保存恢复→到期移除，并由实体测试实际运行。`StatsSystem::loadRecipes` 校验后整体替换配方，失败时保留原配方；Stats Inspector 支持从项目 Assets 选文件、选择命名配方、预览和校验保存。格式与限制见 [recipe-assets.md](docs/recipe-assets.md)。
 
 ## 目标与接入
