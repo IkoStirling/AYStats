@@ -1,4 +1,5 @@
 #include <AYStats/RecipeAsset.h>
+#include <AYAssetFormat/AssetFormat.h>
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <map>
@@ -43,8 +44,8 @@ Result<RecipeAssetSource> inspectRecipeAssetSourceText(const std::filesystem::pa
         if(error)return bad<RecipeAssetSource>(Error::Invalid,error.message(),manifest.generic_string());
         const auto relative=source.lexically_relative(root);
         if(relative.empty() || relative=="." || *relative.begin()==".." ||
-           !relative.generic_string().ends_with(".aystats.json"))
-            return bad<RecipeAssetSource>(Error::Invalid,"manifest must be .aystats.json under Assets",manifest.generic_string());
+           !ayt::asset_format::matchesPath(relative.generic_string(), ayt::asset_format::Id::StatsSource))
+            return bad<RecipeAssetSource>(Error::Invalid,"manifest must be .srs under Assets",manifest.generic_string());
         const auto document=Json::parse(text);
         keys(document,{"version","kind","targetDefinitions","sourceDefinitions","recipeBook"});
         if(document.at("version")!=1 || document.at("kind")!="stats-recipe-source")
@@ -76,8 +77,11 @@ Result<RecipeAssetSource> inspectRecipeAssetSourceText(const std::filesystem::pa
         auto decoded=decodeRecipeBook(*bookText,*result.asset.targetSchema,result.asset.sourceSchema.get());
         if(!decoded)return std::unexpected(decoded.error());
         result.asset.book=*decoded;
-        result.logicalPath=relative.generic_string();
-        result.logicalPath.resize(result.logicalPath.size()-5); // remove trailing .json
+        const auto relativeName = relative.generic_string();
+        const auto matched = ayt::asset_format::matchPath(relativeName);
+        result.logicalPath = ayt::asset_format::appendSuffix(
+            std::string_view(relativeName).substr(0, relativeName.size() - matched->suffix.size()),
+            ayt::asset_format::Id::StatsRecipes);
         return result;
     }catch(const std::exception& exception){
         return bad<RecipeAssetSource>(Error::Invalid,exception.what(),manifest.generic_string());
@@ -199,7 +203,7 @@ Result<std::vector<std::filesystem::path>> saveRecipeBookAndRecook(
         struct Prepared {std::filesystem::path output;std::string cooked;std::optional<std::string> previous;};
         std::vector<Prepared> outputs;
         for(const auto& entry:std::filesystem::recursive_directory_iterator(root)) {
-            if(!entry.is_regular_file() || !entry.path().filename().string().ends_with(".aystats.json"))continue;
+            if(!entry.is_regular_file() || !ayt::asset_format::matchesPath(entry.path().string(), ayt::asset_format::Id::StatsSource))continue;
             auto text=readText(entry.path());
             if(!text)continue;
             auto manifest=Json::parse(*text,nullptr,false);

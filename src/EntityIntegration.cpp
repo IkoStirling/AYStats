@@ -1,4 +1,5 @@
 #include <AYStats/EntityIntegration.h>
+#include <AYAssetFormat/AssetFormat.h>
 #include <AYEntity.h>
 #include <AYEntity/ComponentRegistration.h>
 #include <AYEntity/EntityRuntimeModule.h>
@@ -197,10 +198,10 @@ Result<void> StatsSystem::bindRecipeAsset(ayt::entity::EntityHandle owner,std::s
     if(!owner.isValid())return fail(Error::Invalid,"invalid recipe owner");
     if(_recipeOwner.isValid() && _recipeOwner!=owner)return fail(Error::Invalid,"World already has a recipe asset owner");
     const std::filesystem::path logical{std::string(path)};
-    if(path.empty() || !std::string(path).ends_with(".aystats") || logical.has_root_path() ||
+    if(path.empty() || !ayt::asset_format::matchesPath(path, ayt::asset_format::Id::StatsRecipes) || logical.has_root_path() ||
        logical.has_root_name() || path.find(':')!=std::string_view::npos ||
        std::ranges::any_of(logical,[](const auto& part){return part=="..";}))
-        return fail(Error::Invalid,"recipe asset path must be Assets-relative .aystats");
+        return fail(Error::Invalid,"recipe asset path must be Assets-relative .sts");
 #if defined(AY_STATS_HAS_RESOURCES)
     registerRecipeResourceLoader();
     const auto resolved=resource::resolveAssetPath("",std::string(path));

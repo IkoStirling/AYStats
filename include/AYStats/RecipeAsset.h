@@ -24,7 +24,7 @@ struct RecipeAssetSource {
     RecipeAsset asset;
 };
 
-/// Inspect a .aystats.json manifest and every dependency before cooking.
+/// Inspect a .srs manifest and every dependency before cooking.
 /// References must be inside assetsRoot and source files must all exist.
 Result<RecipeAssetSource> inspectRecipeAssetSource(const std::filesystem::path& manifest,
                                                    const std::filesystem::path& assetsRoot);
@@ -37,15 +37,15 @@ Result<RecipeAssetSource> saveRecipeAssetSource(const std::filesystem::path& man
     const std::filesystem::path& assetsRoot,std::string_view targetDefinitions,
     std::string_view sourceDefinitions,std::string_view recipeBook,
     std::optional<std::string_view> expectedText=std::nullopt);
-/// Rebuild one self-contained .aystats next to its manifest, replacing only after validation.
+/// Rebuild one self-contained .sts next to its manifest, replacing only after validation.
 Result<std::filesystem::path> cookRecipeAssetSource(const std::filesystem::path& manifest,
     const std::filesystem::path& assetsRoot);
-/// Save one authored recipe book and rebuild every referring .aystats in Assets.
+/// Save one authored recipe book and rebuild every referring .sts in Assets.
 /// Returns cooked paths for AYResource hot reload at the next World Sim boundary.
 Result<std::vector<std::filesystem::path>> saveRecipeBookAndRecook(
     const std::filesystem::path& recipePath,const std::filesystem::path& assetsRoot,
     std::string_view expectedText,std::string_view replacement);
-/// Cook the self-contained .aystats bytes; no filesystem access occurs during decode.
+/// Cook the self-contained .sts bytes; no filesystem access occurs during decode.
 Result<std::string> encodeRecipeAsset(const RecipeAsset& asset);
 Result<RecipeAsset> decodeRecipeAsset(std::string_view bytes);
 

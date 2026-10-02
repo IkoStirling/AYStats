@@ -116,7 +116,7 @@ public:
     /// Invalid or missing files keep the previous book and all live states intact.
     Result<void> loadRecipes(const std::filesystem::path& path,const Schema& targetSchema,
                              const Schema* sourceSchema=nullptr,Extensions extensions={});
-    /// Resolve a cooked .aystats asset through AYResource (loose or DB/Pak).
+    /// Resolve a cooked .sts asset through AYResource (loose or DB/Pak).
     /// Replacement is atomic and rejected during publication/calculation.
     Result<void> bindRecipeAsset(ayt::entity::EntityHandle owner,std::string_view path);
     void releaseRecipeAsset(ayt::entity::EntityHandle owner);

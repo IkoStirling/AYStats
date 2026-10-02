@@ -21,11 +21,11 @@ TEST_SUITE(StatsEntityTests)
 TEST_CASE(scene_recipe_reference_loads_and_preserves_last_valid_book) {
     WorldFixture f;
     const auto examples=std::filesystem::path(AY_STATS_EXAMPLE_ASSETS);
-    auto source=inspectRecipeAssetSource(examples/"combat.aystats.json",examples);
+    auto source=inspectRecipeAssetSource(examples/"combat.srs",examples);
     CHECK_TRUE(source.has_value());
     auto cooked=encodeRecipeAsset(source->asset);
     CHECK_TRUE(cooked.has_value());
-    const auto path=ayt::test::testTmpPath("scene-recipe.aystats");
+    const auto path=ayt::test::testTmpPath("scene-recipe.sts");
     {std::ofstream stream(path,std::ios::binary);stream<<*cooked;}
     ayt::resource::setAssetRoot(std::filesystem::path(path).parent_path().string());
     auto* owner=f.world.createEntity();owner->setName("RecipeOwner");
@@ -57,7 +57,7 @@ TEST_CASE(scene_recipe_reference_loads_and_preserves_last_valid_book) {
     CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
     const auto scene=ayt::test::testTmpPath("scene-with-recipes.ayscene");
     CHECK_TRUE(ayt::entity::saveScene(f.world,scene));
-    reference->assetPath="missing.aystats";
+    reference->assetPath="missing.sts";
     CHECK_FALSE(reference->refresh().has_value());
     CHECK_TRUE(system->prepareCalculation(targetHandle,statId("health"),AttributeOp::Decrease,10,"spill",sourceHandle).has_value());
     f.world.destroyEntity(owner);

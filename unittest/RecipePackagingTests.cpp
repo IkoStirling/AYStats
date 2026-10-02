@@ -26,7 +26,7 @@ int main() {
         const fs::path examples=AY_STATS_EXAMPLE_ASSETS;
         for(const char* file:{"target.stats.json","source.stats.json","combat.stats-recipes.json"})
             fs::copy_file(examples/file,root/"Assets/recipes"/file);
-        const auto manifest=root/"Assets/recipes/combat.aystats.json";
+        const auto manifest=root/"Assets/recipes/combat.srs";
         const std::string manifestText=R"({"version":1,"kind":"stats-recipe-source","targetDefinitions":"recipes/target.stats.json","sourceDefinitions":"recipes/source.stats.json","recipeBook":"recipes/combat.stats-recipes.json"})";
         write(manifest,manifestText);
         write(manifest,R"({"version":1,"kind":"stats-recipe-source","targetDefinitions":"recipes/missing.stats.json","sourceDefinitions":"","recipeBook":"recipes/combat.stats-recipes.json"})");
@@ -40,11 +40,11 @@ int main() {
         profile.architecture="x64";profile.configuration="Development";
         profile.content.defaultTransform=resource::ProjectAssetTransform::Raw;
         profile.content.defaultStorage=resource::ProjectAssetStorage::Loose;
-        profile.content.rules={{"recipes/**/*.aystats.json",resource::ProjectAssetTransform::Cook,
+        profile.content.rules={{"recipes/**/*.srs",resource::ProjectAssetTransform::Cook,
             resource::ProjectAssetStorage::Pak,"stats",true}};
         profile.package.output="out/package";
         write(root/"Assets/recipes/valid.ayscene",
-              R"({"entities":[{"components":[{"$type":"StatsRecipeComponent","assetPath":"recipes/combat.aystats"}]}]})");
+              R"({"entities":[{"components":[{"$type":"StatsRecipeComponent","assetPath":"recipes/combat.sts"}]}]})");
         auto plan=resource::ProjectBuildPlanner::create(profile,root.string());
         check(plan.valid(),"valid recipe build plan");
         auto build=resource::ProjectBuildExecutor::execute(plan);
@@ -67,7 +67,7 @@ int main() {
             resource::ProjectAssetStorage::Loose,"",true});
         check(!resource::ProjectBuildPlanner::create(excluded,root.string()).valid(),"excluded stats dependency");
         write(root/"Assets/recipes/invalid.ayscene",
-              R"({"entities":[{"components":[{"$type":"StatsRecipeComponent","assetPath":"recipes/missing.aystats"}]}]})");
+              R"({"entities":[{"components":[{"$type":"StatsRecipeComponent","assetPath":"recipes/missing.sts"}]}]})");
         check(!resource::ProjectBuildPlanner::create(profile,root.string()).valid(),"scene missing stats asset");
         fs::remove(root/"Assets/recipes/invalid.ayscene");
 
@@ -75,13 +75,13 @@ int main() {
         check(cooked.has_value(),"encode final stats asset");
         const auto finalAssets=root/"final/recipes";
         fs::create_directories(finalAssets);
-        write(finalAssets/"combat.aystats",*cooked);
+        write(finalAssets/"combat.sts",*cooked);
         resource::CookShipOptions ship;
         ship.assetsRoot=(root/"final").string();ship.outputDir=(root/"ship").string();
         auto shipped=resource::cookShipPackage(ship);
         check(shipped.ok,"ship valid stats asset: "+shipped.error);
         const auto priorPakSize=fs::file_size(shipped.pakPath);
-        write(finalAssets/"combat.aystats","{broken");
+        write(finalAssets/"combat.sts","{broken");
         shipped=resource::cookShipPackage(ship);
         check(!shipped.ok && fs::file_size(root/"ship/content.pak")==priorPakSize,
               "invalid stats asset preserves prior ship package");
@@ -92,8 +92,8 @@ int main() {
         check(manager.openDatabase((content/"resources.db").string()),"mount stats DB");
         resource::setAssetRoot(content.string());
         fs::remove_all(root/"Assets");
-        auto logical=resource::resolveAssetPath({},"recipes/combat.aystats");
-        check(logical=="recipes/combat.aystats","package logical path");
+        auto logical=resource::resolveAssetPath({},"recipes/combat.sts");
+        check(logical=="recipes/combat.sts","package logical path");
         auto loaded=manager.load<stats::RecipeResource>(logical);
         check(loaded && !manager.hasLoadFailed(logical) && loaded->asset(),"Pak-only stats recipe load");
         check(loaded->asset()->book->select(stats::statId("health"),stats::AttributeOp::Decrease,"spill").has_value(),

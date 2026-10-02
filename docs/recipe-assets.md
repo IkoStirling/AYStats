@@ -32,7 +32,7 @@ then the Editor checks selection/generation and the original on-disk text
 before atomic replacement. Recipe files are independent project assets, so
 this file save does not join scene-document undo history. Reload after changing
 the source definitions path. This flow does not register recipes in
-ResourceManager directly. For runtime use, add a separate `.aystats.json` source
+ResourceManager directly. For runtime use, add a separate `.srs` source
 manifest under `Assets`:
 
 ```json
@@ -42,21 +42,21 @@ manifest under `Assets`:
 All references are relative to `Assets`; use an empty `sourceDefinitions` when
 the book has no source-stat binding. ProjectBuild validates all referenced files,
 requires them in the build profile, hashes their contents with the manifest, and
-cooks a self-contained `.aystats` asset at the same relative path. Select that
+cooks a self-contained `.sts` asset at the same relative path. Select that
 runtime path in a scene's `StatsRecipeComponent.assetPath`. One active component
 owns the recipe book per World. Loading works from a loose cooked file or a
 mounted DB/Pak, and invalid replacement leaves the prior book active. The
 Inspector continues editing the original recipe JSON; recook to update shipped
-content. See [the example manifest](../demo/assets/combat.aystats.json).
+content. See [the example manifest](../demo/assets/combat.srs).
 
 In AYEditor, **File > New AYStats** creates a project asset under `Assets/stats`:
 a starter target definition (`value` pool), a default amount-based decrease
-recipe, a `.aystats.json` source manifest, and a cooked `.aystats` preview.
+recipe, a `.srs` source manifest, and a cooked `.sts` preview.
 The resource browser indexes these files; no manual copying is required.
 Alternatively, add `Gameplay / Stats Recipes` to a Scene entity and click
 **Create new AYStats and attach** in its Inspector to create the same asset set
 and attach its runtime path in one step. The Inspector can also choose an
-existing `.aystats`, or build a `.aystats.json` from existing target definitions,
+existing `.sts`, or build a `.srs` from existing target definitions,
 optional source definitions, and recipe-book files. The editor
 validates and cooks a loose preview resource, then records the logical path in
 the Scene document so attach/undo/redo/save work normally. Saving the recipe

@@ -3,7 +3,7 @@
 #include <AYResource/IResource.h>
 
 namespace ayt::stats {
-/// AYResource L2 snapshot for a self-contained .aystats payload.
+/// AYResource L2 snapshot for a self-contained .sts payload.
 class RecipeResource final : public ayt::resource::IResource {
 public:
     bool load(const std::string& path) override;

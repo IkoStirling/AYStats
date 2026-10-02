@@ -85,9 +85,9 @@ uses d3dcompiler; cross-platform/offline shader publishing remains future scope.
 AssetIO separates author definitions, runtime checkpoint and network wire state.
 Runtime restore checks schema, ranges, versions and effect handle ownership and
 rebuilds derived caches atomically. JSON bounds include 16 MiB text and depth 32.
-Loose author-file replacement is atomic. A separate `.aystats.json` manifest
+Loose author-file replacement is atomic. A separate `.srs` manifest
 references Assets-relative definitions and recipe JSON; ProjectBuild validates
-and hashes this source closure, then emits a self-contained `.aystats` resource.
+and hashes this source closure, then emits a self-contained `.sts` resource.
 AYResource loads cooked recipes from loose files or DB/Pak. The scene stores the
 logical path in a single World-owned StatsRecipeComponent.
 Author field edit and recipe preview are pure. Runtime mode conversion is absent.

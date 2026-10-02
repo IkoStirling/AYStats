@@ -76,6 +76,6 @@ Assets 需要可发现的 nlohmann_json package。本机便利脚本 [build-loca
 
 GPU 只计算可证明 signed32 安全的纯中间量，资源结算和事件在 CPU。Automatic 默认 CPU，按配方/设备实测后可提供阈值。宽乘积、Table/Random/Extension 不降精度：强制 GPU 诊断，Automatic 回退。device/context/job 采用单一提交线程所有权。
 
-运行时模式转换、通用节点作者工具、GPU 常驻权威状态/完整结算、多平台 GPU 尚未提供。`.aystats.json` 创作清单现在可在项目构建时烘焙为自包含 `.aystats`，由场景 `StatsRecipeComponent` 引用并经 AYResource 从 loose 或 Pak 加载；Inspector 仍编辑 loose 源文件。网络当前复制完整 runtime state，不提供数值专用 delta 压缩。脚本 facade 借用 World，销毁前解绑；监听者不能直接销毁其 owner。
+运行时模式转换、通用节点作者工具、GPU 常驻权威状态/完整结算、多平台 GPU 尚未提供。`.srs` 创作清单现在可在项目构建时烘焙为自包含 `.sts`，由场景 `StatsRecipeComponent` 引用并经 AYResource 从 loose 或 Pak 加载；Inspector 仍编辑 loose 源文件。网络当前复制完整 runtime state，不提供数值专用 delta 压缩。脚本 facade 借用 World，销毁前解绑；监听者不能直接销毁其 owner。
 
 完整 AYEditor Release 库及文档编辑/撤销/重做/保存重开回归已通过；完整交互式 Editor smoke 和更细性能遥测（GPU timestamps、缓存命中率等）仍需下一轮验证。已独立测量 C++ 分配次数和增量峰值，不将预算估算冒充测量数据。规范见 [design.md](design.md)，执行记录见 [implementation plan](../../AYDocs/AYSTATS-IMPLEMENTATION-PLAN.md)，公开入口可通过引擎 Agent SDK 查询。

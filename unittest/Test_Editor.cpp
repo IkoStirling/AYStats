@@ -44,7 +44,7 @@ TEST_CASE(document_author_edit_undo_redo_save_reopen_preserves_zero_initial_stat
     CHECK_TRUE(document.redo());document.scene().world().fixedUpdate(.016f);
     CHECK_TRUE(component->read(statId("resource"))->capacity==200);
     CHECK_TRUE(component->commit(std::array{Mutation{statId("resource"),MutationOp::Increase,20}},component->version()).has_value());
-    const auto path=ayt::test::testTmpPath("stats-editor-author.ayscene");CHECK_TRUE(document.saveAs(path));
+    const auto path=ayt::test::testTmpPath("stats-editor-author.scn");CHECK_TRUE(document.saveAs(path));
     CHECK_TRUE(document.open(path));CHECK_TRUE(registerStatsSystem(document.scene().world()).has_value());
     document.scene().world().fixedUpdate(.016f);
     auto* loaded=document.scene().world().findEntity("StatsEditorOwner")->getComponent<StatsComponent>();
@@ -67,7 +67,7 @@ TEST_CASE(recipe_asset_document_attach_undo_reopen_and_reload) {
         {{InputSource::Amount}},true}}).value();
     const auto definitions=assets/"recipes/target.stats.json";
     const auto recipeFile=assets/"recipes/hit.stats-recipes.json";
-    const auto manifest=assets/"recipes/hit.aystats.json";
+    const auto manifest=assets/"recipes/hit.srs";
     CHECK_TRUE(writeTextAtomic(definitions,encodeDefinitions(*schema).value()).has_value());
     const auto original=encodeRecipeBook(*book,*schema).value();
     CHECK_TRUE(writeTextAtomic(recipeFile,original).has_value());
@@ -95,7 +95,7 @@ TEST_CASE(recipe_asset_document_attach_undo_reopen_and_reload) {
     CHECK_TRUE(entity->getComponent<StatsRecipeComponent>()->assetPath.empty());
     CHECK_TRUE(document.redo());
     CHECK_TRUE(entity->getComponent<StatsRecipeComponent>()->assetPath==cooked->logicalPath);
-    const auto scene=root/"scene.ayscene";CHECK_TRUE(document.saveAs(scene.string()));
+    const auto scene=root/"scene.scn";CHECK_TRUE(document.saveAs(scene.string()));
     CHECK_TRUE(document.open(scene.string()));
     CHECK_TRUE(registerStatsSystem(document.scene().world()).has_value());
     document.scene().world().fixedUpdate(.016f);
@@ -162,7 +162,7 @@ TEST_CASE(recipe_asset_inspector_validates_builds_and_attaches_from_widgets) {
     CHECK_NOT_NULL(manifest);CHECK_NOT_NULL(target);CHECK_NOT_NULL(bookInput);CHECK_NOT_NULL(build);
     CHECK_NOT_NULL(create);
     if(manifest && target && bookInput && build && create) {
-        manifest->setText(L"recipes/hit.aystats.json");
+        manifest->setText(L"recipes/hit.srs");
         target->setText(L"recipes/target.stats.json");
         bookInput->setText(L"recipes/missing.stats-recipes.json");
         session.ui().layout();
@@ -174,21 +174,21 @@ TEST_CASE(recipe_asset_inspector_validates_builds_and_attaches_from_widgets) {
             CHECK_TRUE(build->onMouseButtonUp(event));
         };
         click();
-        CHECK_FALSE(fs::exists(assets/"recipes/hit.aystats"));
+        CHECK_FALSE(fs::exists(assets/"recipes/hit.sts"));
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
             ->getComponent<StatsRecipeComponent>()->assetPath.empty());
         bookInput->setText(L"recipes/hit.stats-recipes.json");
         click();
-        CHECK_TRUE(fs::is_regular_file(assets/"recipes/hit.aystats.json"));
-        CHECK_TRUE(fs::is_regular_file(assets/"recipes/hit.aystats"));
+        CHECK_TRUE(fs::is_regular_file(assets/"recipes/hit.srs"));
+        CHECK_TRUE(fs::is_regular_file(assets/"recipes/hit.sts"));
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
-            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.aystats");
+            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.sts");
         CHECK_TRUE(session.document()->undo());
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
             ->getComponent<StatsRecipeComponent>()->assetPath.empty());
         CHECK_TRUE(session.document()->redo());
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
-            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.aystats");
+            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.sts");
         const auto createBounds=create->getWorldBounds();
         const ayt::ui::UIMouseEvent createEvent(ayt::math::FVector2{
             (createBounds.minX+createBounds.maxX)*.5f,
@@ -197,23 +197,23 @@ TEST_CASE(recipe_asset_inspector_validates_builds_and_attaches_from_widgets) {
         CHECK_TRUE(create->onMouseButtonUp(createEvent));
         CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.target.stats.json"));
         CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.stats-recipes.json"));
-        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.aystats.json"));
-        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.aystats"));
+        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.srs"));
+        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats.sts"));
         CHECK_TRUE(session.assetDatabase().scanNow());
         const auto* indexed=session.assetDatabase().findByLogicalPath(
-            "Assets/stats/NewStats.aystats.json");
+            "Assets/stats/NewStats.srs");
         CHECK_NOT_NULL(indexed);
         if(indexed)CHECK_TRUE(indexed->type==ayt::editor::EditorAssetType::StatsRecipe);
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
-            ->getComponent<StatsRecipeComponent>()->assetPath=="stats/NewStats.aystats");
+            ->getComponent<StatsRecipeComponent>()->assetPath=="stats/NewStats.sts");
         CHECK_TRUE(session.document()->undo());
         CHECK_TRUE(session.document()->scene().world().findEntity(id)
-            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.aystats");
+            ->getComponent<StatsRecipeComponent>()->assetPath=="recipes/hit.sts");
         const auto second=ayt::editor::createEditorProjectAsset(
             root.string(),ayt::editor::EditorAssetType::StatsRecipe);
         CHECK_TRUE(second.success);
-        CHECK_TRUE(second.logicalPath=="Assets/stats/NewStats 2.aystats.json");
-        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats 2.aystats"));
+        CHECK_TRUE(second.logicalPath=="Assets/stats/NewStats 2.srs");
+        CHECK_TRUE(fs::is_regular_file(assets/"stats/NewStats 2.sts"));
     }
     session.shutdown();
     CHECK_TRUE(fs::weakly_canonical(root).parent_path()==fs::canonical(ayt::test::testTmpDir()));

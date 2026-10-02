@@ -26,14 +26,15 @@ TEST_CASE(recipe_authoring_creates_cooks_and_recooks_linked_assets) {
         {{InputSource::Amount}},true}}).value();
     const auto definitions=root/"recipes/target.stats.json";
     const auto book=root/"recipes/hit.stats-recipes.json";
-    const auto manifest=root/"recipes/hit.aystats.json";
+    const auto manifest=root/"recipes/hit.srs";
     CHECK_TRUE(writeTextAtomic(definitions,encodeDefinitions(*schema).value()).has_value());
     const auto original=encodeRecipeBook(*initial,*schema).value();
     CHECK_TRUE(writeTextAtomic(book,original).has_value());
     auto created=saveRecipeAssetSource(manifest,root,"recipes/target.stats.json","",
         "recipes/hit.stats-recipes.json");
-    CHECK_TRUE(created.has_value());CHECK_TRUE(created->logicalPath=="recipes/hit.aystats");
-    const auto output=root/"recipes/hit.aystats";
+    if (!created) throw std::runtime_error(created.error().message + " at " + created.error().path);
+    CHECK_TRUE(created->logicalPath=="recipes/hit.sts");
+    const auto output=root/"recipes/hit.sts";
     CHECK_TRUE(decodeRecipeAsset(readText(output).value()).has_value());
     CHECK_FALSE(saveRecipeAssetSource(manifest,root,"recipes/target.stats.json","",
         "recipes/hit.stats-recipes.json").has_value());
@@ -49,23 +50,23 @@ TEST_CASE(recipe_authoring_creates_cooks_and_recooks_linked_assets) {
     CHECK_TRUE(readText(book).value()==replacement);
     CHECK_TRUE(decodeRecipeAsset(readText(output).value())->book->select(
         statId("health"),AttributeOp::Decrease,"heavy").has_value());
-    CHECK_FALSE(saveRecipeAssetSource(root/"escape.aystats.json",root,"../outside.json","",
+    CHECK_FALSE(saveRecipeAssetSource(root/"escape.srs",root,"../outside.json","",
         "recipes/hit.stats-recipes.json").has_value());
     fs::remove_all(root);
 }
 TEST_CASE(recipe_asset_source_closure_and_self_contained_roundtrip) {
     namespace fs=std::filesystem;
     const auto root=fs::path(__FILE__).parent_path().parent_path()/"demo/assets";
-    auto source=inspectRecipeAssetSource(root/"combat.aystats.json",root);
+    auto source=inspectRecipeAssetSource(root/"combat.srs",root);
     CHECK_TRUE(source.has_value());
-    CHECK_TRUE(source->logicalPath=="combat.aystats");
+    CHECK_TRUE(source->logicalPath=="combat.sts");
     auto cooked=encodeRecipeAsset(source->asset);
     CHECK_TRUE(cooked.has_value());
     auto loaded=decodeRecipeAsset(*cooked);
     CHECK_TRUE(loaded.has_value());
     CHECK_TRUE(loaded->book->select(statId("health"),AttributeOp::Decrease,"spill").has_value());
     CHECK_FALSE(decodeRecipeAsset("{\"version\":2}").has_value());
-    const auto outside=inspectRecipeAssetSource(root/"combat.aystats.json",root.parent_path()/"unittest");
+    const auto outside=inspectRecipeAssetSource(root/"combat.srs",root.parent_path()/"unittest");
     CHECK_FALSE(outside.has_value());
 }
 TEST_CASE(recipe_book_roundtrip_retains_authored_provenance_and_defaults) {

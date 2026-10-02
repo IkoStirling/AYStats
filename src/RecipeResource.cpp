@@ -1,4 +1,5 @@
 #include <AYStats/RecipeResource.h>
+#include <AYAssetFormat/AssetFormat.h>
 #include <AYResource/IResourceLoader.h>
 #include <AYResource/ResourceRegistry.h>
 #include <mutex>
@@ -7,7 +8,7 @@ namespace ayt::stats {
 namespace {
 class Loader final : public ayt::resource::IResourceLoader {
 public:
-    bool canLoad(const std::string& path) const override { return path.ends_with(".aystats"); }
+    bool canLoad(const std::string& path) const override { return ayt::asset_format::matchesPath(path, ayt::asset_format::Id::StatsRecipes); }
     const char* getResourceType() const override { return "StatsRecipes"; }
     std::shared_ptr<ayt::resource::IResource> load(const std::string& path) override {
         auto resource=std::make_shared<RecipeResource>();return resource->load(path)?resource:nullptr;
@@ -25,7 +26,10 @@ std::unique_ptr<ayt::resource::IResourceLoader> createLoader(){return std::make_
 void registerRecipeResourceLoader() {
     static std::once_flag once;
     std::call_once(once,[]{
-        ayt::resource::ResourceRegistry::registerExtension(".aystats","StatsRecipes");
+        const auto& format = ayt::asset_format::describe(ayt::asset_format::Id::StatsRecipes);
+        ayt::resource::ResourceRegistry::registerExtension(std::string(format.suffix), "StatsRecipes");
+        for (const auto alias : format.readAliases)
+            ayt::resource::ResourceRegistry::registerExtension(std::string(alias), "StatsRecipes");
         ayt::resource::ResourceRegistry::registerLoader("StatsRecipes",&createLoader);
     });
 }
