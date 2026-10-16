@@ -40,6 +40,22 @@ private:
     Extensions _extensions;
     std::size_t _inputs=0,_output=0;
 };
+/// Compact executed node description; no copied tables or callable references.
+struct CalculationDebugStage {
+    std::uint32_t node=0;Op operation=Op::Constant;std::uint32_t a=0,b=0,c=0,binding=0;
+    Value parameter=0,value=0;std::string extension;
+};
+struct CalculationDebugRecord {
+    std::uint64_t sequence=0;CalculationContext context;Value result=0;
+    std::vector<Value> inputs;
+    std::vector<CalculationDebugStage> stages;
+    std::string error;bool truncated=false;
+};
+/// Optional thread-local observation of actual evaluate calls. No callback/re-evaluation.
+/// Captures at most128 calculations /256 nodes each on this thread; workers opt in separately.
+void setCalculationDebugCaptureEnabled(bool enabled) noexcept;
+void clearCalculationDebugHistory() noexcept;
+std::vector<CalculationDebugRecord> calculationDebugSnapshot();
 /// Stateless draw from an explicit context/purpose/index. Not a shared mutable RNG.
 std::uint64_t randomBits(const CalculationContext& context, std::uint64_t purpose, std::uint64_t draw=0) noexcept;
 /// Trace is requested explicitly; retains each named stage value up to a hard limit.

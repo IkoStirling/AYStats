@@ -184,3 +184,9 @@ and public callback timing. Normal execution skips clock reads. Requested C++
 payload budget and measured C++ allocation peak are distinct from process RSS.
 Controlled before/after evidence, probe overhead and remaining owned-result/
 callback costs are documented in docs/settlement-performance.md.
+
+## Extended diagnostic observations (2026-10-15)
+
+Optional actual CPU calculation observations are thread-local: setCalculationDebugCaptureEnabled defaults off; calculationDebugSnapshot returns owned inputs, completed node values, result/error and context. The journal caps128 calls and256 inputs/nodes each, catches diagnostic allocation failures, and never re-evaluates a plan or invokes Extension twice. Worker threads opt in separately and transfer their own snapshots; no GPU trace or permission/settlement inference is promised. Existing explicit trace remains a calculation request, distinct from passive observation.
+
+Regression sources are included. Runtime tests and interactive editor acceptance are deferred for this content task; untested changes remain uncommitted.

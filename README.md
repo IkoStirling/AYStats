@@ -83,3 +83,9 @@ GPU 只计算可证明 signed32 安全的纯中间量，资源结算和事件在
 运行时模式转换、通用节点作者工具、GPU 常驻权威状态/完整结算、多平台 GPU 尚未提供。`.srs` 创作清单现在可在项目构建时烘焙为自包含 `.sts`，由场景 `StatsRecipeComponent` 引用并经 AYResource 从 loose 或 Pak 加载；Inspector 仍编辑 loose 源文件。网络当前复制完整 runtime state，不提供数值专用 delta 压缩。脚本 facade 借用 World，销毁前解绑；监听者不能直接销毁其 owner。
 
 完整 AYEditor Release 库及文档编辑/撤销/重做/保存重开回归已通过；完整交互式 Editor smoke 和更细性能遥测（GPU timestamps、缓存命中率等）仍需下一轮验证。已独立测量 C++ 分配次数和增量峰值，不将预算估算冒充测量数据。规范见 [design.md](design.md)，执行记录见 [implementation plan](../../AYDocs/AYSTATS-IMPLEMENTATION-PLAN.md)，公开入口可通过引擎 Agent SDK 查询。
+
+## Extended diagnostic observations (2026-10-15)
+
+Optional actual CPU calculation observations are thread-local: setCalculationDebugCaptureEnabled defaults off; calculationDebugSnapshot returns owned inputs, completed node values, result/error and context. The journal caps128 calls and256 inputs/nodes each, catches diagnostic allocation failures, and never re-evaluates a plan or invokes Extension twice. Worker threads opt in separately and transfer their own snapshots; no GPU trace or permission/settlement inference is promised. Existing explicit trace remains a calculation request, distinct from passive observation.
+
+Regression sources are included. Runtime tests and interactive editor acceptance are deferred for this content task; untested changes remain uncommitted.

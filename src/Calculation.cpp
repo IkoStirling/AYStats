@@ -4,6 +4,28 @@
 
 namespace ayt::stats {
 namespace {
+thread_local bool debugCapture=false;
+thread_local std::uint64_t debugSequence=0;
+thread_local std::vector<CalculationDebugRecord> debugRecords;
+void captureCalculation(const CalculationPlan& plan,std::span<const Value> inputs,const CalculationContext& context,
+                        std::span<const Value> scratch,std::size_t completed,const std::string& error={}) noexcept {
+    if(!debugCapture)return;
+    try {
+        CalculationDebugRecord row;row.sequence=++debugSequence;row.context=context;row.error=error;
+        if(!error.empty() && completed<plan.instructions().size())row.error="Node "+std::to_string(plan.instructions()[completed].node.id)+": "+error;
+        row.inputs.assign(inputs.begin(),inputs.begin()+std::min(inputs.size(),size_t(256)));
+        for(size_t i=0;i<std::min(completed,size_t(256));++i){const auto& n=plan.instructions()[i].node;row.stages.push_back({n.id,n.op,n.a,n.b,n.c,n.binding,n.value,scratch[i],n.extension.substr(0,256)});}
+        row.truncated=completed>256 || inputs.size()>256;
+        if(error.empty())row.result=scratch[plan.outputIndex()];
+        if(debugRecords.size()==128)debugRecords.erase(debugRecords.begin());debugRecords.push_back(std::move(row));
+    } catch(...) { /* Observations cannot change arithmetic or callback count. */ }
+}
+}
+void setCalculationDebugCaptureEnabled(bool enabled) noexcept {debugCapture=enabled;if(!enabled)debugRecords.clear();}
+void clearCalculationDebugHistory() noexcept {debugRecords.clear();}
+std::vector<CalculationDebugRecord> calculationDebugSnapshot(){return debugRecords;}
+
+namespace {
 auto fail(Error e,std::string m,std::string path={}) {return std::unexpected(Diagnostic{e,std::move(m),std::move(path)});}
 std::size_t operands(Op op) {
     switch(op) {
@@ -92,9 +114,10 @@ Result<Value> CalculationPlan::evaluate(std::span<const Value> inputs,const Calc
         }
         default:value=fail(Error::Unsupported,"unknown instruction");break;
         }
-        if(!value){auto error=value.error();error.path=std::to_string(n.id)+(error.path.empty()?"":"/"+error.path);return std::unexpected(std::move(error));}
+        if(!value){auto error=value.error();error.path=std::to_string(n.id)+(error.path.empty()?"":"/"+error.path);captureCalculation(*this,inputs,context,scratch,i,error.message);return std::unexpected(std::move(error));}
         scratch[i]=*value;
     }
+    captureCalculation(*this,inputs,context,scratch,_instructions.size());
     return scratch[_output];
 }
 Result<CalculationTrace> trace(const CalculationPlan& plan,std::span<const Value> inputs,const CalculationContext& context,std::size_t limit) {

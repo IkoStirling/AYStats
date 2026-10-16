@@ -30,4 +30,17 @@ TEST_CASE(explicit_extensions_and_exception_diagnostics) {
     CHECK_TRUE(trace(plan,{},{})->result==16);CHECK_TRUE(plan.hasExtensions());
     auto broken=CalculationPlan::compile(nodes,2,0,{{"square",[](auto,const auto&)->Result<Value>{throw std::runtime_error("bad");}}}).value();CHECK_TRUE(trace(broken,{},{}).error().path=="2");
 }
+TEST_CASE(debug_journal_observes_actual_extensions_once_and_keeps_owned_values) {
+    struct Reset {~Reset(){setCalculationDebugCaptureEnabled(false);}} reset;
+    clearCalculationDebugHistory();setCalculationDebugCaptureEnabled(true);int calls=0;
+    auto plan=CalculationPlan::compile({{.id=1,.op=Op::Constant,.value=4},{.id=2,.op=Op::Extension,.a=1,.b=1,.extension="square"}},2,0,
+        {{"square",[&](auto values,const auto&)->Result<Value>{++calls;return values[0]*values[1];}}}).value();
+    std::array<Value,2> scratch{};CHECK(plan.evaluate({}, {},scratch).value()==16);
+    auto owned=calculationDebugSnapshot();CHECK(calls==1);CHECK(owned.size()==1);
+    if(!owned.empty()){CHECK(owned[0].result==16);CHECK(owned[0].stages.size()==2);if(owned[0].stages.size()==2){CHECK(owned[0].stages.back().operation==Op::Extension);CHECK(owned[0].stages[0].value==4);}}
+    CHECK(calculationDebugSnapshot().size()==1);CHECK(calls==1);
+    for(int i=0;i<140;++i)(void)plan.evaluate({}, {},scratch);
+    CHECK(calls==141);CHECK(calculationDebugSnapshot().size()==128);
+    clearCalculationDebugHistory();CHECK(calculationDebugSnapshot().empty());CHECK(owned.size()==1);
+}
 TEST_SUITE_END
